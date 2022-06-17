@@ -12,7 +12,7 @@ MCU:
 #include "MQ135.h"
 #include "bsec.h"
 
-#define RZero       758.7   //The rzero from calibration for MQ135
+#define RZero       10.91   //The rzero from calibration for MQ135
 #define MQ135Pin    A0      //pin that the MQ sensor is attached to
 
 //function declarations
@@ -55,6 +55,7 @@ void loop(void){
         output += ", " + String(iaqSensor.breathVocEquivalent);
         output += ", " + String(gasSensor.getCorrectedPPM(iaqSensor.temperature, iaqSensor.humidity));
         output += ", " + String(gasSensor.getPPM());
+        output += " Diff, " + String((iaqSensor.co2Equivalent)-(gasSensor.getCorrectedPPM(iaqSensor.temperature, iaqSensor.humidity)));
         Serial.println(output);
     } else {
         checkIaqSensorStatus();
