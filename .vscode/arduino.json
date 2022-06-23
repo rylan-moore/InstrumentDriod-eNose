@@ -1,5 +1,6 @@
 {
     "configuration": "opt=small,usbstack=arduino,debug=off",
     "board": "adafruit:samd:adafruit_qtpy_m0",
-    "sketch": "eNose.ino"
+    "sketch": "eNose.ino",
+    "port": "COM6"
 }

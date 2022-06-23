@@ -24,6 +24,7 @@ float getCorrectionFactor(float t, float h);
 float getCorrectedResistance(float t, float h);
 float getResistance(void);
 float getCorrectedPPM(float t, float h);
+float getCorrectedRZero(float t, float h);
 float getPPM();
 
 float getPPMgravity(void);
@@ -53,6 +54,7 @@ Adafruit_ADS1115 ads; //declare the adc for use over i2c
 #define ATMOCO2 510 //Global CO2 Aug 2021
 #define _rload  20.1
 #define _rzero  10.91
+//float _rzero;
 
 #define InfaredIn 2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
 
@@ -93,6 +95,9 @@ void setup(void)
   // Print the header
   output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%], Static IAQ, CO2 equivalent, breath VOC equivalent";
   Serial.println(output);
+
+  //calibrate the MQ sensor. 
+  //_rzero = getCorrectedRZero(iaqSensor.temperature, iaqSensor.humidity);
 }
 
 // Function that is looped forever
@@ -125,7 +130,7 @@ void loop(void)
     checkIaqSensorStatus();
   }
   //int i = ads.readADC_SingleEnded(0);
-  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);
+  //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
 }
 
 // Helper function definitions
@@ -212,8 +217,8 @@ float getCorrectedResistance(float t, float h) {
 */
 /**************************************************************************/
 float getResistance(void) { 
-
-    int  val = ads.getLastConversionResults();
+    ads.setGain(GAIN_ONE);
+    int  val = ads.readADC_Differential_0_1();
     //Serial.println(val);
     val = (val*4.1)/5;
     //Serial.println(val);
@@ -256,20 +261,35 @@ float getPPM() {
 
 }
 
+/**************************************************************************/
+/*!
+@brief  Get the resistance RZero of the sensor for calibration purposes
+  This will be done once per code run. 
+
+@return The sensor resistance RZero in kOhm
+*/
+/**************************************************************************/
+float getCorrectedRZero(float t, float h) { 
+  return getCorrectedResistance(t, h) * pow((ATMOCO2/PARA), (1./PARB));
+}
+
 /**
  * @brief Will read the adc computed result from the Infared CO2 sensor. 
+ * 
+ * @note Will need to implement some sort of loop that will average data based on noise analysis. 
  * 
  * @return float 
  * Return CO2 in PPM
  */
 float getPPMgravity(void){
+  ads.setGain(GAIN_TWO); //change the gain to make this reading more accurate. 
   int rawd = ads.readADC_SingleEnded(InfaredIn); //Read the raw data. 
-  rawd = ads.computeVolts(rawd); //convert to volts. 
-  if(rawd < 0.4){
+  float rawf = ads.computeVolts(rawd); //convert to volts. 
+  if(rawf < 0.4){
     return 0;
   }
   else{
-    return (2875*rawd)-750;
+    return (3125*rawf)-1250;
   }
   return -1;
 }
