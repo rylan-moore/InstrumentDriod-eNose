@@ -26,6 +26,8 @@ float getResistance(void);
 float getCorrectedPPM(float t, float h);
 float getPPM();
 
+float getPPMgravity(void);
+
 // Create an object of the class Bsec
 Bsec iaqSensor;
 
@@ -51,6 +53,8 @@ Adafruit_ADS1115 ads; //declare the adc for use over i2c
 #define ATMOCO2 510 //Global CO2 Aug 2021
 #define _rload  20.1
 #define _rzero  10.91
+
+#define InfaredIn 2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
 
 
 // Entry point for the example
@@ -110,7 +114,8 @@ void loop(void)
     // output += ", " + String(iaqSensor.staticIaq);
     output += ", " + String(iaqSensor.co2Equivalent); //here!!!
     output += ", " + String(getCorrectedPPM(iaqSensor.temperature, iaqSensor.humidity));
-    output += ", " + String(getPPM());
+    //output += ", " + String(getPPM());
+    output += ", " + String(getPPMgravity()); //get the value from the Infared Sensor
     // output += ", " + String(iaqSensor.breathVocEquivalent);
     // int16_t results = ads.getLastConversionResults();
     // output += ", " + String( ads.computeVolts(results)); //test the adc output 
@@ -249,4 +254,22 @@ float getPPM() {
   //Serial.println(getResistance());
   return PARA * pow((getResistance()/_rzero), -PARB);
 
+}
+
+/**
+ * @brief Will read the adc computed result from the Infared CO2 sensor. 
+ * 
+ * @return float 
+ * Return CO2 in PPM
+ */
+float getPPMgravity(void){
+  int rawd = ads.readADC_SingleEnded(InfaredIn); //Read the raw data. 
+  rawd = ads.computeVolts(rawd); //convert to volts. 
+  if(rawd < 0.4){
+    return 0;
+  }
+  else{
+    return (2875*rawd)-750;
+  }
+  return -1;
 }
