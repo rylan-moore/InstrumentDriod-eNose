@@ -6,6 +6,7 @@
 Sensor List:
     MQ-135
     BME688
+    Gravity Infared V1.1
 
 MCU:
     QT PY SAMD21
