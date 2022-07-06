@@ -1,19 +1,27 @@
 
 
-//Rylan Moore
-//Enose project
-/*
-Sensor List:
-    MQ-135
-    BME688
-    Gravity Infared V1.1
+/**
+ * @file eNose.ino
+ * @author Rylan Moore (rylan.moore@colorado.edu)
+ * @brief Enose project
+ * @version 0.1
+ * @date 2022-06-23
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ * @note Sensors:
+ *        MQ-135
+ *        BME688
+ *        Gravity Infared V1.1
+ *      MCU:
+ *        QT PY SAMD21
+ */
 
-MCU:
-    QT PY SAMD21
-*/
+
 
 #include "bsec.h"
 #include <Adafruit_ADS1X15.h>
+#include <Adafruit_MCP4728.h>
 //#include "MQ135.h"
 
 // Helper functions declarations
@@ -35,6 +43,8 @@ Bsec iaqSensor;
 String output;
 
 Adafruit_ADS1115 ads; //declare the adc for use over i2c
+Adafruit_ADS1115 ads2;
+Adafruit_MCP4728 mcp; //declare the dac for use over i2c
 
 
 //for MQ
@@ -71,6 +81,14 @@ void setup(void)
   checkIaqSensorStatus();
   //pinMode(A0, INPUT);
 
+  //check the status of the dac  
+  if (!mcp.begin()) {
+    Serial.println("Failed to find MCP4728 chip");
+    while (1) {
+      delay(10);
+    }
+  }
+
   bsec_virtual_sensor_t sensorList[10] = {
     BSEC_OUTPUT_RAW_TEMPERATURE,
     BSEC_OUTPUT_RAW_PRESSURE,
@@ -88,7 +106,7 @@ void setup(void)
   checkIaqSensorStatus();
 
 
-
+  ads2.begin(0b110000, &Wire);
   ads.begin();
   ads.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
   ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
@@ -131,6 +149,7 @@ void loop(void)
   }
   //int i = ads.readADC_SingleEnded(0);
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
+  mcp.setChannelValue(MCP4728_CHANNEL_A, (3000)); //set the output to 3v3 on the va on the dac
 }
 
 // Helper function definitions
@@ -272,6 +291,7 @@ float getPPM() {
 float getCorrectedRZero(float t, float h) { 
   return getCorrectedResistance(t, h) * pow((ATMOCO2/PARA), (1./PARB));
 }
+
 
 /**
  * @brief Will read the adc computed result from the Infared CO2 sensor. 
