@@ -44,6 +44,7 @@ String output;
 
 Adafruit_ADS1115 ads; //declare the adc for use over i2c
 Adafruit_ADS1115 ads2;
+Adafruit_ADS1115 ads3;
 Adafruit_MCP4728 mcp; //declare the dac for use over i2c
 
 
@@ -61,12 +62,21 @@ Adafruit_MCP4728 mcp; //declare the dac for use over i2c
 #define CORG 1.130128205
 
 /// Atmospheric CO2 level for calibration purposes
-#define ATMOCO2 510 //Global CO2 Aug 2021
+#define ATMOCO2 420 //Global CO2 Aug 2021
 #define _rload  20.1
-#define _rzero  10.91
-//float _rzero;
+#define _rzero  8.1//10.91
 
 #define InfaredIn 2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
+
+//info for the MQ135 sensor
+#define MQ135_ADC ads //define which adc the MQ135 is on
+#define MQ135_DAC mcp //define wich dac the MQ135 heater is on
+#define MQ135_RS_PIN  0 //channel on the adc that the sense resistor is on
+#define MQ135_RH_PIN  3 //channel on the adc that the heat sense resistor is on
+#define MQ135_VC_PIN  1 //channel on the adc where the supply voltage is read. 
+
+#define IR_ADC  ads //define which adc the IR CO2 sensor is on
+#define IR_PIN  2 //channel on the adc where the IR analog in is located. 
 
 
 // Entry point for the example
@@ -74,6 +84,8 @@ void setup(void)
 {
   Serial.begin(115200);
   Wire.begin();
+
+  
 
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
   output = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
@@ -106,10 +118,11 @@ void setup(void)
   checkIaqSensorStatus();
 
 
-  ads2.begin(0b110000, &Wire);
+  ads2.begin(0x49, &Wire); //init the 2nd and 3rd ads1115 with different addresses jumpered, start ads with the default address as well.  
+  ads3.begin(0x4B, &Wire);
   ads.begin();
   ads.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
-  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
+  //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
   output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%], Static IAQ, CO2 equivalent, breath VOC equivalent";
   Serial.println(output);
@@ -150,6 +163,8 @@ void loop(void)
   //int i = ads.readADC_SingleEnded(0);
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   mcp.setChannelValue(MCP4728_CHANNEL_A, (3000)); //set the output to 3v3 on the va on the dac
+
+  
 }
 
 // Helper function definitions
@@ -237,12 +252,19 @@ float getCorrectedResistance(float t, float h) {
 /**************************************************************************/
 float getResistance(void) { 
     ads.setGain(GAIN_ONE);
-    int  val = ads.readADC_Differential_0_1();
+    //int  val = ads.readADC_Differential_0_1();
+    int val = ads.readADC_SingleEnded(0);
+    float fval = val * (0.125/1000);
+
+    ads.setGain(GAIN_TWOTHIRDS);
+    val = ads.readADC_SingleEnded(1); //read the refrence voltage
+    float rval = val *(0.1875/1000);
     //Serial.println(val);
-    val = (val*4.1)/5;
+    //val = (val*4.1)/5;
     //Serial.println(val);
   //this will need to be changed in order to collect data from the external ADC
-  return ((32768./(float)val) - 1.)*_rload;
+  //return ((32768./(float)val) - 1.)*_rload;
+  return _rload*((rval - fval)/ fval);
   //return _rload* ((1 - ((float)val / 32768.)) / ((float)val / 32768.) );
 
 }
