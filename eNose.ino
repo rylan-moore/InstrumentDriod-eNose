@@ -28,7 +28,9 @@
 //#include "MQ135.h"
 
 //test define 
-#define test  true
+//#define i2c_test    true
+#define adc_test    true
+#define mq_burnin   true
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
@@ -36,7 +38,7 @@ void errLeds(void);
 
 float getCorrectionFactor(float t, float h);
 float getCorrectedResistance(float t, float h);
-float getResistance(void);
+float getResistance(int sensor);
 float getCorrectedPPM(float t, float h);
 float getCorrectedRZero(float t, float h);
 float getPPM();
@@ -136,12 +138,16 @@ Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 #define ADC2_ADDR       0x49
 #define ADC3_ADDR       0x4b
 
+//for heater use
+int heat_i = 0;
 
 // Entry point for the example
 void setup(void)
 {
   Serial.begin(115200);
-  while(!Serial)
+  #if i2c_test
+    while(!Serial) //wait for the serial connection 
+  #endif
   Wire.begin();
 
   /*check i2c devices are on bus and addresses correctly*/
@@ -209,16 +215,23 @@ void setup(void)
   checkIaqSensorStatus();
 
   ads1.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
+    ads2.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
+      ads3.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
   output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%], Static IAQ, CO2 equivalent, breath VOC equivalent";
   Serial.println(output);
-  Serial.println("Finsihed i2c device test check!");
-  #if test
+
+
+  //i2c unit test. 
+  #if i2c_test
+    Serial.println("Finsihed i2c device test check!");
     while(1){
       delay(10);
     }
   #endif
+
+
   //calibrate the MQ sensor. 
   //_rzero = getCorrectedRZero(iaqSensor.temperature, iaqSensor.humidity);
 }
@@ -226,36 +239,102 @@ void setup(void)
 // Function that is looped forever
 void loop(void)
 {
-  //MQ135 gasSensor = MQ135(A0, 10.91, 22);
-  unsigned long time_trigger = millis();
-  if (iaqSensor.run()) { // If new data is available
+  // //MQ135 gasSensor = MQ135(A0, 10.91, 22);
+  // unsigned long time_trigger = millis();
+  // if (iaqSensor.run()) { // If new data is available
 
-    output = String(time_trigger/1000);
-    // output += ", " + String(iaqSensor.rawTemperature);
-    // output += ", " + String(iaqSensor.pressure);
-    // // output += ", " + String(iaqSensor.rawHumidity);
-    // // output += ", " + String(iaqSensor.gasResistance);
-    // // output += ", " + String(iaqSensor.iaq);
-    // // output += ", " + String(iaqSensor.iaqAccuracy);
-    output += ", " + String(iaqSensor.temperature);
-    output += ", " + String(iaqSensor.humidity);
-    // output += ", " + String(iaqSensor.staticIaq);
-    output += ", " + String(iaqSensor.co2Equivalent); //here!!!
-    output += ", " + String(getCorrectedPPM(iaqSensor.temperature, iaqSensor.humidity));
-    //output += ", " + String(getPPM());
-    output += ", " + String(getPPMgravity()); //get the value from the Infared Sensor
-    // output += ", " + String(iaqsSensor.breathVocEquivalent);
-    // int16_t results = ads.getLastConversionResults();
-    // output += ", " + String( ads.computeVolts(results)); //test the adc output 
-    // output += ", " + String( results); //test the adc output 
-    Serial.println(output);
-  } else {
-    checkIaqSensorStatus();
-  }
-  //int i = ads.readADC_SingleEnded(0);
-  //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
-  mcp1.setChannelValue(MCP4728_CHANNEL_A, (2800)); //set the output of the opamp to 5v, calibrated
+  //   output = String(time_trigger/1000);
+  //   // output += ", " + String(iaqSensor.rawTemperature);
+  //   // output += ", " + String(iaqSensor.pressure);
+  //   // // output += ", " + String(iaqSensor.rawHumidity);
+  //   // // output += ", " + String(iaqSensor.gasResistance);
+  //   // // output += ", " + String(iaqSensor.iaq);
+  //   // // output += ", " + String(iaqSensor.iaqAccuracy);
+  //   output += ", " + String(iaqSensor.temperature);
+  //   output += ", " + String(iaqSensor.humidity);
+  //   // output += ", " + String(iaqSensor.staticIaq);
+  //   output += ", " + String(iaqSensor.co2Equivalent); //here!!!
+  //   output += ", " + String(getCorrectedPPM(iaqSensor.temperature, iaqSensor.humidity));
+  //   //output += ", " + String(getPPM());
+  //   output += ", " + String(getPPMgravity()); //get the value from the Infared Sensor
+  //   // output += ", " + String(iaqsSensor.breathVocEquivalent);
+  //   // int16_t results = ads.getLastConversionResults();
+  //   // output += ", " + String( ads.computeVolts(results)); //test the adc output 
+  //   // output += ", " + String( results); //test the adc output 
+  //   Serial.println(output);
+  // } else {
+  //   checkIaqSensorStatus();
+  // }
+  // //int i = ads.readADC_SingleEnded(0);
+  // //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
+  // mcp1.setChannelValue(MCP4728_CHANNEL_A, (2800)); //set the output of the opamp to 5v, calibrated
 
+  //test
+  #if adc_test
+  String output;
+
+  output = String(MQ135_ADC.computeVolts(MQ135_ADC.readADC_SingleEnded(MQ135_RH_PIN)));
+  output += ", " + String(MQ135_ADC.computeVolts(MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN))) + ", ";
+
+  output += String(MQ2_ADC.computeVolts(MQ2_ADC.readADC_SingleEnded(MQ2_RH_PIN)));
+  output += ", " + String(MQ2_ADC.computeVolts(MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN))) + ", ";
+
+  output += String(MQ8_ADC.computeVolts(MQ8_ADC.readADC_SingleEnded(MQ8_RH_PIN)));
+  output += ", " + String(MQ8_ADC.computeVolts(MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN))) + ", ";
+
+  output += String(MQ4_ADC.computeVolts(MQ4_ADC.readADC_SingleEnded(MQ4_RH_PIN)));
+  output += ", " + String(MQ4_ADC.computeVolts(MQ4_ADC.readADC_SingleEnded(MQ4_RS_PIN))) + ", ";
+
+  output += String(MQ3_ADC.computeVolts(MQ3_ADC.readADC_SingleEnded(MQ3_RH_PIN)));
+  output += ", " + String(MQ3_ADC.computeVolts(MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN))) + ", ";
+
+  output += String(MQ7_ADC.computeVolts(MQ7_ADC.readADC_SingleEnded(MQ7_RH_PIN)));
+  output += ", " + String(MQ7_ADC.computeVolts(MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN))) + ", ";
+
+  Serial.println(output);
+  delay(1000);
+  #endif
+
+  #if mq_burnin
+    switch(heat_i){
+      case 0:
+        mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
+        mcp1.setChannelValue(MQ135_DAC_CH, (2800)); 
+        heat_i++;
+        break;
+      case 1:
+        mcp1.setChannelValue(MQ135_DAC_CH, (0));
+        mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
+        heat_i++;
+        break;
+      case 2:
+        mcp1.setChannelValue(MQ2_DAC_CH, (0)); 
+        mcp1.setChannelValue(MQ8_DAC_CH, (2800)); 
+        heat_i++;
+        break;
+      case 3:
+        mcp1.setChannelValue(MQ8_DAC_CH, (0));
+        mcp1.setChannelValue(MQ4_DAC_CH, (2800));
+        heat_i++;
+        break;
+      case 4:
+        mcp1.setChannelValue(MQ4_DAC_CH, (0));
+        mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
+        heat_i++;
+        break;
+      case 5:
+        mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
+        mcp2.setChannelValue(MQ7_DAC_CH, (2800)); 
+        heat_i=0;
+        break;
+    }
+    // mcp1.setChannelValue(MQ135_DAC_CH, (2800)); 
+    // mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
+    // mcp1.setChannelValue(MQ8_DAC_CH, (0)); 
+    // mcp1.setChannelValue(MQ4_DAC_CH, (0)); 
+    // mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
+    // mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
+  #endif
   
 }
 
