@@ -10,7 +10,7 @@
  * @copyright Copyright (c) 2022
  * 
  * @note Sensors:
- *        MQ-135
+ *        MQ-135/2/3/4/8/7
  *        BME688 - 0x76/0x77
  *        ADS1115 - 0x48, 0x49, 0x4A, 0x4B
  *        MCP4728 - 0x60, 0x61
@@ -26,6 +26,9 @@
 #include <Adafruit_ADS1X15.h>
 #include <Adafruit_MCP4728.h>
 //#include "MQ135.h"
+
+//test define 
+#define test  true
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
@@ -45,13 +48,13 @@ Bsec iaqSensor;
 
 String output;
 
-Adafruit_ADS1115 ads1; //declare the adc for use over i2c
-Adafruit_ADS1115 ads2;
-Adafruit_ADS1115 ads3;
-Adafruit_MCP4728 mcp1; //declare the dac for use over i2c
-Adafruit_MCP4728 mcp2;
+Adafruit_ADS1115 ads1; //0x48
+Adafruit_ADS1115 ads2; //0x49
+Adafruit_ADS1115 ads3; //0x4a
+Adafruit_MCP4728 mcp1; //0x60
+Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 
-//for MQ
+//for MQ-135
 #define PARA 116.6020682
 #define PARB -2.769034857
 
@@ -69,40 +72,125 @@ Adafruit_MCP4728 mcp2;
 #define _rload  20.1
 #define _rzero  8.1//10.91
 
-#define InfaredIn 2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
+//begin sensor defines 
 
 //info for the MQ135 sensor
-#define MQ135_ADC ads1 //define which adc the MQ135 is on
-#define MQ135_DAC mcp //define wich dac the MQ135 heater is on
-#define MQ135_RS_PIN  0 //channel on the adc that the sense resistor is on
-#define MQ135_RH_PIN  3 //channel on the adc that the heat sense resistor is on
-#define MQ135_VC_PIN  1 //channel on the adc where the supply voltage is read. 
+  #define MQ135_ADC     ads1 //define which adc the MQ135 is on
+  #define MQ135_RS_PIN  1 //channel on the adc that the sense resistor is on
+  #define MQ135_RH_PIN  0 //channel on the adc that the heat sense resistor is on
 
-#define IR_ADC  ads1 //define which adc the IR CO2 sensor is on
-#define IR_PIN  2 //channel on the adc where the IR analog in is located. 
+  #define MQ135_DAC     mcp1 //define wich dac the MQ135 heater is on
+  #define MQ135_DAC_CH  MCP4728_CHANNEL_B //channel on the dac that the heater is on
+
+//info for the MQ-2 sensor
+  #define MQ2_ADC     ads1 //define which adc the MQ135 is on
+  #define MQ2_RS_PIN  3 //channel on the adc that the sense resistor is on
+  #define MQ2_RH_PIN  2 //channel on the adc that the heat sense resistor is on
+
+  #define MQ2_DAC     mcp1 //define wich dac the MQ135 heater is on
+  #define MQ2_DAC_CH MCP4728_CHANNEL_A //channel on the dac that the heater is on
+
+//info for the MQ-8 sensor
+  #define MQ8_ADC     ads2 //define which adc the MQ135 is on
+  #define MQ8_RS_PIN  1 //channel on the adc that the sense resistor is on
+  #define MQ8_RH_PIN  0 //channel on the adc that the heat sense resistor is on
+
+  #define MQ8_DAC     mcp1 //define wich dac the MQ135 heater is on
+  #define MQ8_DAC_CH  MCP4728_CHANNEL_D //channel on the dac that the heater is on
+
+//info for the MQ-4 sensor
+  #define MQ4_ADC     ads2 //define which adc the MQ135 is on
+  #define MQ4_RS_PIN  3 //channel on the adc that the sense resistor is on
+  #define MQ4_RH_PIN  2 //channel on the adc that the heat sense resistor is on
+
+  #define MQ4_DAC     mcp1 //define wich dac the MQ135 heater is on
+  #define MQ4_DAC_CH  MCP4728_CHANNEL_C //channel on the dac that the heater is on
+
+//info for the MQ-3 sensor
+  #define MQ3_ADC     ads3 //define which adc the MQ135 is on
+  #define MQ3_RS_PIN  1 //channel on the adc that the sense resistor is on
+  #define MQ3_RH_PIN  0 //channel on the adc that the heat sense resistor is on
+
+  #define MQ3_DAC     mcp2 //define wich dac the MQ135 heater is on
+  #define MQ3_DAC_CH  MCP4728_CHANNEL_A //channel on the dac that the heater is on
+
+//info for the MQ-7 sensor
+  #define MQ7_ADC     ads3 //define which adc the MQ135 is on
+  #define MQ7_RS_PIN  1 //channel on the adc that the sense resistor is on
+  #define MQ7_RH_PIN  0 //channel on the adc that the heat sense resistor is on
+
+  #define MQ7_DAC     mcp2 //define wich dac the MQ135 heater is on
+  #define MQ7_DAC_CH  MCP4728_CHANNEL_B //channel on the dac that the heater is on
+
+//info for the IR CO2 sensor
+  #define IR_ADC        adsX //define which adc the IR CO2 sensor is on
+  #define IR_PIN        2 //channel on the adc where the IR analog in is located. 
+  #define InfaredIn     2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
+
+//end sensor define section
+
+//i2c devices defines
+#define DAC1_ADDR       0x60
+#define DAC2_ADDR       0x61
+#define ADC1_ADDR       0x48
+#define ADC2_ADDR       0x49
+#define ADC3_ADDR       0x4b
 
 
 // Entry point for the example
 void setup(void)
 {
   Serial.begin(115200);
+  while(!Serial)
   Wire.begin();
 
-  
+  /*check i2c devices are on bus and addresses correctly*/
+  //check the status of the dac  
+  if (!mcp1.begin(DAC1_ADDR)) {
+    Serial.println("Failed to find DAC1");
+    while (1) {
+      delay(10);
+    }
+  }
+    if (!mcp2.begin(DAC2_ADDR)) { //start the second dac with other address
+    Serial.println("Failed to find DAC2");
+    while (1) {
+      delay(10);
+    }
+  }
+  //set all of the dac channels to 0 to avoid over current. 
+    mcp1.setChannelValue(MQ135_DAC_CH, (0)); 
+    mcp1.setChannelValue(MQ2_DAC_CH, (0)); 
+    mcp1.setChannelValue(MQ8_DAC_CH, (0)); 
+    mcp1.setChannelValue(MQ4_DAC_CH, (0)); 
+    mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
+    mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
+  //check status of the adcs 
+  if (!ads1.begin(ADC1_ADDR, &Wire)){
+    Serial.println("Failed to find ADC1");
+    while(1){
+      delay(10);
+    }
+  }
+  if (!ads2.begin(ADC2_ADDR, &Wire)){
+    Serial.println("Failed to find ADC2");
+    while(1){
+      delay(10);
+    }
+  }
+  if (!ads3.begin(ADC3_ADDR, &Wire)){
+    Serial.println("Failed to find ADC3");
+    while(1){
+      delay(10);
+    }
+  }
+  /*end checking i2c devices*/
 
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
   output = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
   Serial.println(output);
   checkIaqSensorStatus();
   //pinMode(A0, INPUT);
-
-  //check the status of the dac  
-  if (!mcp1.begin()) {
-    Serial.println("Failed to find MCP4728 chip");
-    while (1) {
-      delay(10);
-    }
-  }
 
   bsec_virtual_sensor_t sensorList[10] = {
     BSEC_OUTPUT_RAW_TEMPERATURE,
@@ -120,16 +208,17 @@ void setup(void)
   iaqSensor.updateSubscription(sensorList, 10, BSEC_SAMPLE_RATE_LP);
   checkIaqSensorStatus();
 
-
-  ads2.begin(0x49, &Wire); //init the 2nd and 3rd ads1115 with different addresses jumpered, start ads with the default address as well.  
-  ads3.begin(0x4B, &Wire);
-  ads1.begin();
   ads1.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
   output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%], Static IAQ, CO2 equivalent, breath VOC equivalent";
   Serial.println(output);
-
+  Serial.println("Finsihed i2c device test check!");
+  #if test
+    while(1){
+      delay(10);
+    }
+  #endif
   //calibrate the MQ sensor. 
   //_rzero = getCorrectedRZero(iaqSensor.temperature, iaqSensor.humidity);
 }
@@ -261,7 +350,8 @@ float getResistance(void) {
 
     ads1.setGain(GAIN_TWOTHIRDS);
     val = ads1.readADC_SingleEnded(1); //read the refrence voltage
-    float rval = val *(0.1875/1000);
+    //float rval = val *(0.1875/1000);
+    float rval = 5.0; //this may work but could need to be changed as well. OUT of adc channels 
     //Serial.println(val);
     //val = (val*4.1)/5;
     //Serial.println(val);
