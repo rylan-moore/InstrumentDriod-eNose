@@ -11,7 +11,10 @@
  * 
  * @note Sensors:
  *        MQ-135
- *        BME688
+ *        BME688 - 0x76/0x77
+ *        ADS1115 - 0x48, 0x49, 0x4A, 0x4B
+ *        MCP4728 - 0x60, 0x61
+ *        
  *        Gravity Infared V1.1
  *      MCU:
  *        QT PY SAMD21
@@ -42,11 +45,11 @@ Bsec iaqSensor;
 
 String output;
 
-Adafruit_ADS1115 ads; //declare the adc for use over i2c
+Adafruit_ADS1115 ads1; //declare the adc for use over i2c
 Adafruit_ADS1115 ads2;
 Adafruit_ADS1115 ads3;
-Adafruit_MCP4728 mcp; //declare the dac for use over i2c
-
+Adafruit_MCP4728 mcp1; //declare the dac for use over i2c
+Adafruit_MCP4728 mcp2;
 
 //for MQ
 #define PARA 116.6020682
@@ -69,13 +72,13 @@ Adafruit_MCP4728 mcp; //declare the dac for use over i2c
 #define InfaredIn 2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
 
 //info for the MQ135 sensor
-#define MQ135_ADC ads //define which adc the MQ135 is on
+#define MQ135_ADC ads1 //define which adc the MQ135 is on
 #define MQ135_DAC mcp //define wich dac the MQ135 heater is on
 #define MQ135_RS_PIN  0 //channel on the adc that the sense resistor is on
 #define MQ135_RH_PIN  3 //channel on the adc that the heat sense resistor is on
 #define MQ135_VC_PIN  1 //channel on the adc where the supply voltage is read. 
 
-#define IR_ADC  ads //define which adc the IR CO2 sensor is on
+#define IR_ADC  ads1 //define which adc the IR CO2 sensor is on
 #define IR_PIN  2 //channel on the adc where the IR analog in is located. 
 
 
@@ -94,7 +97,7 @@ void setup(void)
   //pinMode(A0, INPUT);
 
   //check the status of the dac  
-  if (!mcp.begin()) {
+  if (!mcp1.begin()) {
     Serial.println("Failed to find MCP4728 chip");
     while (1) {
       delay(10);
@@ -120,8 +123,8 @@ void setup(void)
 
   ads2.begin(0x49, &Wire); //init the 2nd and 3rd ads1115 with different addresses jumpered, start ads with the default address as well.  
   ads3.begin(0x4B, &Wire);
-  ads.begin();
-  ads.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
+  ads1.begin();
+  ads1.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
   output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%], Static IAQ, CO2 equivalent, breath VOC equivalent";
@@ -152,7 +155,7 @@ void loop(void)
     output += ", " + String(getCorrectedPPM(iaqSensor.temperature, iaqSensor.humidity));
     //output += ", " + String(getPPM());
     output += ", " + String(getPPMgravity()); //get the value from the Infared Sensor
-    // output += ", " + String(iaqSensor.breathVocEquivalent);
+    // output += ", " + String(iaqsSensor.breathVocEquivalent);
     // int16_t results = ads.getLastConversionResults();
     // output += ", " + String( ads.computeVolts(results)); //test the adc output 
     // output += ", " + String( results); //test the adc output 
@@ -162,7 +165,7 @@ void loop(void)
   }
   //int i = ads.readADC_SingleEnded(0);
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
-  mcp.setChannelValue(MCP4728_CHANNEL_A, (3000)); //set the output to 3v3 on the va on the dac
+  mcp1.setChannelValue(MCP4728_CHANNEL_A, (2800)); //set the output of the opamp to 5v, calibrated
 
   
 }
@@ -251,13 +254,13 @@ float getCorrectedResistance(float t, float h) {
 */
 /**************************************************************************/
 float getResistance(void) { 
-    ads.setGain(GAIN_ONE);
+    ads1.setGain(GAIN_ONE);
     //int  val = ads.readADC_Differential_0_1();
-    int val = ads.readADC_SingleEnded(0);
+    int val = ads1.readADC_SingleEnded(0);
     float fval = val * (0.125/1000);
 
-    ads.setGain(GAIN_TWOTHIRDS);
-    val = ads.readADC_SingleEnded(1); //read the refrence voltage
+    ads1.setGain(GAIN_TWOTHIRDS);
+    val = ads1.readADC_SingleEnded(1); //read the refrence voltage
     float rval = val *(0.1875/1000);
     //Serial.println(val);
     //val = (val*4.1)/5;
@@ -324,9 +327,9 @@ float getCorrectedRZero(float t, float h) {
  * Return CO2 in PPM
  */
 float getPPMgravity(void){
-  ads.setGain(GAIN_TWO); //change the gain to make this reading more accurate. 
-  int rawd = ads.readADC_SingleEnded(InfaredIn); //Read the raw data. 
-  float rawf = ads.computeVolts(rawd); //convert to volts. 
+  ads1.setGain(GAIN_TWO); //change the gain to make this reading more accurate. 
+  int rawd = ads1.readADC_SingleEnded(InfaredIn); //Read the raw data. 
+  float rawf = ads1.computeVolts(rawd); //convert to volts. 
   if(rawf < 0.4){
     return 0;
   }
