@@ -31,6 +31,7 @@
 //#define i2c_test    true
 #define adc_test    true
 #define mq_burnin   true
+#define enose_calib true
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
@@ -118,8 +119,8 @@ Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 
 //info for the MQ-7 sensor
   #define MQ7_ADC     ads3 //define which adc the MQ135 is on
-  #define MQ7_RS_PIN  1 //channel on the adc that the sense resistor is on
-  #define MQ7_RH_PIN  0 //channel on the adc that the heat sense resistor is on
+  #define MQ7_RS_PIN  3 //channel on the adc that the sense resistor is on
+  #define MQ7_RH_PIN  2 //channel on the adc that the heat sense resistor is on
 
   #define MQ7_DAC     mcp2 //define wich dac the MQ135 heater is on
   #define MQ7_DAC_CH  MCP4728_CHANNEL_B //channel on the dac that the heater is on
@@ -140,6 +141,14 @@ Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 
 //for heater use
 int heat_i = 0;
+#define RsH   1.5
+#define RsS   22000
+#define Vcc   5       //for serial output
+
+const int REF_INTERVAL = 500; //want a sample every 100ms
+unsigned long lastRefresh = 0;
+unsigned long test_start = 0;
+const unsigned long test_duration = 1000000; //get 100 seconds of data from start of serial monitoring
 
 // Entry point for the example
 void setup(void)
@@ -147,6 +156,9 @@ void setup(void)
   Serial.begin(115200);
   #if i2c_test
     while(!Serial) //wait for the serial connection 
+  #endif
+  #if enose_calib
+    while(!Serial)
   #endif
   Wire.begin();
 
@@ -214,9 +226,9 @@ void setup(void)
   iaqSensor.updateSubscription(sensorList, 10, BSEC_SAMPLE_RATE_LP);
   checkIaqSensorStatus();
 
-  ads1.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
-    ads2.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
-      ads3.setGain(GAIN_ONE); //this will set the range to 0-4.1 V with 12mV resolution
+  ads1.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
+    ads2.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
+      ads3.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
   output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%], Static IAQ, CO2 equivalent, breath VOC equivalent";
@@ -230,8 +242,13 @@ void setup(void)
       delay(10);
     }
   #endif
-
-
+  mcp1.setChannelValue(MQ135_DAC_CH, (2800)); //turn the heaters on to start. 
+  mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
+  mcp1.setChannelValue(MQ8_DAC_CH, (2800)); 
+  mcp1.setChannelValue(MQ4_DAC_CH, (2800)); 
+  mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
+  mcp2.setChannelValue(MQ7_DAC_CH, (2800)); 
+  test_start = millis();
   //calibrate the MQ sensor. 
   //_rzero = getCorrectedRZero(iaqSensor.temperature, iaqSensor.humidity);
 }
@@ -268,79 +285,127 @@ void loop(void)
   // //int i = ads.readADC_SingleEnded(0);
   // //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // mcp1.setChannelValue(MCP4728_CHANNEL_A, (2800)); //set the output of the opamp to 5v, calibrated
+  unsigned long current = millis();
+  if ( (current - lastRefresh >= REF_INTERVAL) && ((current - test_start) < test_duration)){
 
-  //test
-  #if adc_test
-  String output;
+  
+    //test
+    #if adc_test
+    String output;
+    float voltage;
 
-  output = String(MQ135_ADC.computeVolts(MQ135_ADC.readADC_SingleEnded(MQ135_RH_PIN)));
-  output += ", " + String(MQ135_ADC.computeVolts(MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN))) + ", ";
+    //GET ALL OF THE HEATER VOLTAGES
+    float h135, h2, h8, h4, h3, h7;
+    MQ135_ADC.setGain(GAIN_FOUR);
+    h135 = MQ135_ADC.computeVolts(MQ135_ADC.readADC_SingleEnded(MQ135_RH_PIN));
+    h2 = MQ2_ADC.computeVolts(MQ2_ADC.readADC_SingleEnded(MQ2_RH_PIN));
+    MQ8_ADC.setGain(GAIN_FOUR);
+    h8 = MQ8_ADC.computeVolts(MQ8_ADC.readADC_SingleEnded(MQ8_RH_PIN));
+    h4 = MQ4_ADC.computeVolts(MQ4_ADC.readADC_SingleEnded(MQ4_RH_PIN));
+    MQ3_ADC.setGain(GAIN_FOUR);
+    h3 = MQ3_ADC.computeVolts(MQ3_ADC.readADC_SingleEnded(MQ3_RH_PIN));
+    h7 = MQ7_ADC.computeVolts(MQ7_ADC.readADC_SingleEnded(MQ7_RH_PIN));
 
-  output += String(MQ2_ADC.computeVolts(MQ2_ADC.readADC_SingleEnded(MQ2_RH_PIN)));
-  output += ", " + String(MQ2_ADC.computeVolts(MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN))) + ", ";
+    h135 = ((Vcc - h135) * 1.5 )/ h135; //compute resistances 
+    h2 = ((Vcc - h2) * 1.5 )/ h2;
+    h8 = ((Vcc - h8) * 1.5 )/ h8;
+    h4 = ((Vcc - h4) * 1.5 )/ h4;
+    h3 = ((Vcc - h3) * 1.5 )/ h3;
+    h7 = ((Vcc - h7) * 1.5 )/ h7;
 
-  output += String(MQ8_ADC.computeVolts(MQ8_ADC.readADC_SingleEnded(MQ8_RH_PIN)));
-  output += ", " + String(MQ8_ADC.computeVolts(MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN))) + ", ";
+    MQ135_ADC.setGain(GAIN_TWOTHIRDS); //reset gains
+    MQ8_ADC.setGain(GAIN_TWOTHIRDS);
+    MQ3_ADC.setGain(GAIN_TWOTHIRDS);
 
-  output += String(MQ4_ADC.computeVolts(MQ4_ADC.readADC_SingleEnded(MQ4_RH_PIN)));
-  output += ", " + String(MQ4_ADC.computeVolts(MQ4_ADC.readADC_SingleEnded(MQ4_RS_PIN))) + ", ";
+    float s135 = 0, s2 = 0, s8 = 0, s4 = 0, s3 = 0, s7 = 0;
+    for (int i = 0; i< 3; i++){
+      s135 += MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN);
+      s2 += MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN);
+      s8 += MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN);
+      s4 += MQ4_ADC.readADC_SingleEnded(MQ4_RS_PIN);
+      s3 += MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN);
+      s7 += MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN);
+    }
+    s135 = s135/3;
+    s2 = s2/3;
+    s8 = s8/3;
+    s4 = s4/3;
+    s3 = s3/3;
+    s7 = s7/3;
 
-  output += String(MQ3_ADC.computeVolts(MQ3_ADC.readADC_SingleEnded(MQ3_RH_PIN)));
-  output += ", " + String(MQ3_ADC.computeVolts(MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN))) + ", ";
+    output = String(current) + ",135:," + String(h135);
+    voltage = MQ135_ADC.computeVolts(s135);
+    voltage = ((Vcc - voltage) * RsS )/ voltage;
+    output += "," + String(voltage) + ",";
 
-  output += String(MQ7_ADC.computeVolts(MQ7_ADC.readADC_SingleEnded(MQ7_RH_PIN)));
-  output += ", " + String(MQ7_ADC.computeVolts(MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN))) + ", ";
+    output += "2:," +String(h2);
+    voltage = MQ2_ADC.computeVolts(s2);
+    voltage = ((Vcc - voltage) * RsS )/ voltage;
+    output += "," + String(voltage) + ",";
 
-  Serial.println(output);
-  delay(1000);
-  #endif
+    output += "8:," + String(h8);
+    voltage = MQ8_ADC.computeVolts(s8);
+    voltage = ((Vcc - voltage) * RsS )/ voltage;
+    output += "," + String(voltage) + ",";
+
+    output += "4:," +String(h4);
+    voltage = MQ4_ADC.computeVolts(s4);
+    voltage = ((Vcc - voltage) * RsS )/ voltage;
+    output += "," + String(voltage) + ",";
+
+    output += "3:," +String(h3);
+    voltage = MQ3_ADC.computeVolts(s3);
+    voltage = ((Vcc - voltage) * RsS )/ voltage;
+    output += "," + String(voltage) + ",";
+
+    output += "7:," + String(h7);
+    voltage = MQ7_ADC.computeVolts(s7);
+    voltage = ((Vcc - voltage) * RsS )/ voltage;
+    output += "," + String(voltage);
+
+    Serial.println(output);
+    //delay(1000);
+    #endif
+    lastRefresh = current;
+  }
+  else if ((current - test_start) > test_duration){
+    Serial.println("Done with test");
+    while(1);
+  }
 
   #if mq_burnin
-    switch(heat_i){
-      case 0:
-        mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
-        mcp1.setChannelValue(MQ135_DAC_CH, (2800)); 
-        heat_i++;
-        break;
-      case 1:
-        mcp1.setChannelValue(MQ135_DAC_CH, (0));
-        mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
-        heat_i++;
-        break;
-      case 2:
-        mcp1.setChannelValue(MQ2_DAC_CH, (0)); 
-        mcp1.setChannelValue(MQ8_DAC_CH, (2800)); 
-        heat_i++;
-        break;
-      case 3:
-        mcp1.setChannelValue(MQ8_DAC_CH, (0));
-        mcp1.setChannelValue(MQ4_DAC_CH, (2800));
-        heat_i++;
-        break;
-      case 4:
-        mcp1.setChannelValue(MQ4_DAC_CH, (0));
-        mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
-        heat_i++;
-        break;
-      case 5:
-        mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
-        mcp2.setChannelValue(MQ7_DAC_CH, (2800)); 
-        heat_i=0;
-        break;
-    }
-    // mcp1.setChannelValue(MQ135_DAC_CH, (2800)); 
-    // mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
-    // mcp1.setChannelValue(MQ8_DAC_CH, (0)); 
-    // mcp1.setChannelValue(MQ4_DAC_CH, (0)); 
-    // mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
-    // mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
+    // switch(heat_i){
+    //   case 0:
+        
+    //     mcp1.setChannelValue(MQ4_DAC_CH, (0)); 
+    //     mcp1.setChannelValue(MQ8_DAC_CH, (0));
+    //     mcp1.setChannelValue(MQ135_DAC_CH, (2800)); 
+    //     mcp2.setChannelValue(MQ7_DAC_CH, (2800));
+        
+    //     heat_i++;
+    //     break;
+    //   case 1:
+    //     mcp1.setChannelValue(MQ135_DAC_CH, (0));
+    //     mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
+    //     mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
+    //     mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
+    //     heat_i++;
+    //     break;
+    //   case 2:
+    //     mcp1.setChannelValue(MQ2_DAC_CH, (0)); 
+    //     mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
+    //     mcp1.setChannelValue(MQ8_DAC_CH, (2800)); 
+    //     mcp1.setChannelValue(MQ4_DAC_CH, (2800));
+    //     heat_i=0;
+    //     break;
+    // }
+
   #endif
   
 }
 
 // Helper function definitions
-void checkIaqSensorStatus(void)
-{
+void checkIaqSensorStatus(void){
   if (iaqSensor.status != BSEC_OK) {
     if (iaqSensor.status < BSEC_OK) {
       output = "BSEC error code : " + String(iaqSensor.status);
@@ -366,8 +431,7 @@ void checkIaqSensorStatus(void)
   }
 }
 
-void errLeds(void)
-{
+void errLeds(void){
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
   delay(100);
