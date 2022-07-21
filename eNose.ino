@@ -334,7 +334,7 @@ void loop(void)
     s3 = s3/3;
     s7 = s7/3;
     //String(iaqSensor.temperature)
-    output = String(current)+ String(iaqSensor.temperature) + String(iaqSensor.humidity) + "time+temp+humid";
+    output = String(current)+ "," + String(iaqSensor.temperature)+ "," + String(iaqSensor.humidity) + ",time+temp+humid";
     output +=  ",135:," + String(h135); //output the heater resistance and the sense resistance for all sensors
     voltage = MQ135_ADC.computeVolts(s135);
     voltage = ((Vcc - voltage) * RsS )/ voltage;
