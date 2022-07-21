@@ -318,7 +318,7 @@ void loop(void)
     MQ3_ADC.setGain(GAIN_TWOTHIRDS);
 
     float s135 = 0, s2 = 0, s8 = 0, s4 = 0, s3 = 0, s7 = 0;
-    for (int i = 0; i< 3; i++){
+    for (int i = 0; i< 3; i++){ //collect the three data points per sensor
       s135 += MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN);
       s2 += MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN);
       s8 += MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN);
@@ -326,14 +326,14 @@ void loop(void)
       s3 += MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN);
       s7 += MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN);
     }
-    s135 = s135/3;
+    s135 = s135/3; //calculate the average
     s2 = s2/3;
     s8 = s8/3;
     s4 = s4/3;
     s3 = s3/3;
     s7 = s7/3;
 
-    output = String(current) + ",135:," + String(h135);
+    output = String(current) + ",135:," + String(h135); //output the heater resistance and the sense resistance for all sensors
     voltage = MQ135_ADC.computeVolts(s135);
     voltage = ((Vcc - voltage) * RsS )/ voltage;
     output += "," + String(voltage) + ",";
