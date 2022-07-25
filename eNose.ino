@@ -53,7 +53,8 @@ String output;
 
 Adafruit_ADS1115 ads1; //0x48
 Adafruit_ADS1115 ads2; //0x49
-Adafruit_ADS1115 ads3; //0x4a
+Adafruit_ADS1115 ads3; //0x4b
+Adafruit_ADS1115 ads4; //ox4a
 Adafruit_MCP4728 mcp1; //0x60
 Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 
@@ -131,6 +132,8 @@ Adafruit_MCP4728 mcp2; //0x61 (this was set already)
   #define InfaredIn     2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
 
 //end sensor define section
+  #define VCC_ADC       ads4
+  #define VCC_PIN       0
 
 //i2c devices defines
 #define DAC1_ADDR       0x60
@@ -138,12 +141,13 @@ Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 #define ADC1_ADDR       0x48
 #define ADC2_ADDR       0x49
 #define ADC3_ADDR       0x4b
+#define ADC4_ADDR       0x4a
 
 //for heater use
 int heat_i = 0;
 #define RsH   1.5
 #define RsS   22000
-#define Vcc   5       //for serial output
+float Vcc=5;       //for serial output
 
 const int REF_INTERVAL = 500; //want a sample every 100ms
 unsigned long lastRefresh = 0;
@@ -202,6 +206,12 @@ void setup(void)
       delay(10);
     }
   }
+  if (!ads3.begin(ADC4_ADDR, &Wire)){
+    Serial.println("Failed to find ADC4");
+    while(1){
+      delay(10);
+    }
+  }
   /*end checking i2c devices*/
 
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
@@ -229,11 +239,11 @@ void setup(void)
   ads1.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
     ads2.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
       ads3.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
+      ads4.setGain(GAIN_TWOTHIRDS);
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
   output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%], Static IAQ, CO2 equivalent, breath VOC equivalent";
   Serial.println(output);
-
 
   //i2c unit test. 
   #if i2c_test
@@ -294,7 +304,7 @@ void loop(void)
     iaqSensor.run();
     String output;
     float voltage;
-
+    Vcc = VCC_ADC.computeVolts(VCC_ADC.readADC_SingleEnded(VCC_PIN)); //read the supply voltage at the start of each half second interval.
     //GET ALL OF THE HEATER VOLTAGES
     float h135, h2, h8, h4, h3, h7;
     MQ135_ADC.setGain(GAIN_FOUR);
