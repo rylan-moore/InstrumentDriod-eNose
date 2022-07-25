@@ -147,7 +147,7 @@ Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 int heat_i = 0;
 #define RsH   1.5
 #define RsS   22000
-float Vcc=5;       //for serial output
+float Vcc=5.0;       //for serial output
 
 const int REF_INTERVAL = 500; //want a sample every 100ms
 unsigned long lastRefresh = 0;
@@ -206,7 +206,7 @@ void setup(void)
       delay(10);
     }
   }
-  if (!ads3.begin(ADC4_ADDR, &Wire)){
+  if (!ads4.begin(ADC4_ADDR, &Wire)){
     Serial.println("Failed to find ADC4");
     while(1){
       delay(10);
@@ -266,6 +266,8 @@ void setup(void)
 // Function that is looped forever
 void loop(void)
 {
+  //float Vcc = 5.0;
+  
   // //MQ135 gasSensor = MQ135(A0, 10.91, 22);
   // unsigned long time_trigger = millis();
   // if (iaqSensor.run()) { // If new data is available
@@ -305,6 +307,7 @@ void loop(void)
     String output;
     float voltage;
     Vcc = VCC_ADC.computeVolts(VCC_ADC.readADC_SingleEnded(VCC_PIN)); //read the supply voltage at the start of each half second interval.
+
     //GET ALL OF THE HEATER VOLTAGES
     float h135, h2, h8, h4, h3, h7;
     MQ135_ADC.setGain(GAIN_FOUR);
@@ -373,7 +376,7 @@ void loop(void)
     output += "7:," + String(h7);
     voltage = MQ7_ADC.computeVolts(s7);
     voltage = ((Vcc - voltage) * RsS )/ voltage;
-    output += "," + String(voltage);
+    output += "," + String(voltage) + "," + String(Vcc);
 
     Serial.println(output);
     //delay(1000);
