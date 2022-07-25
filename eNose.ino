@@ -18,6 +18,9 @@
  *        Gravity Infared V1.1
  *      MCU:
  *        QT PY SAMD21
+ * 
+ * Current version collects data from all sensors and reports it over serial to a host. 
+ * This needs to be adjusted in the future to be calibrated and then run program to detect gasses. 
  */
 
 
