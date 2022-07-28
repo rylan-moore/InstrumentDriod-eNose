@@ -33,7 +33,6 @@
 //test define 
 //#define i2c_test    true
 #define adc_test    true
-#define mq_burnin   true
 #define enose_calib true
 
 // Helper functions declarations
@@ -399,34 +398,6 @@ void loop(void)
     while(1);
   }
 
-  #if mq_burnin
-    // switch(heat_i){
-    //   case 0:
-        
-    //     mcp1.setChannelValue(MQ4_DAC_CH, (0)); 
-    //     mcp1.setChannelValue(MQ8_DAC_CH, (0));
-    //     mcp1.setChannelValue(MQ135_DAC_CH, (2800)); 
-    //     mcp2.setChannelValue(MQ7_DAC_CH, (2800));
-        
-    //     heat_i++;
-    //     break;
-    //   case 1:
-    //     mcp1.setChannelValue(MQ135_DAC_CH, (0));
-    //     mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
-    //     mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
-    //     mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
-    //     heat_i++;
-    //     break;
-    //   case 2:
-    //     mcp1.setChannelValue(MQ2_DAC_CH, (0)); 
-    //     mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
-    //     mcp1.setChannelValue(MQ8_DAC_CH, (2800)); 
-    //     mcp1.setChannelValue(MQ4_DAC_CH, (2800));
-    //     heat_i=0;
-    //     break;
-    // }
-
-  #endif
   
 }
 
