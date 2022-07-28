@@ -135,8 +135,8 @@ Adafruit_MCP4728 mcp2; //0x61 (this was set already)
   #define InfaredIn     2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
 
 //end sensor define section
-  #define VCC_ADC       ads4
-  #define VCC_PIN       0
+  #define VSS_ADC       ads4
+  #define VSS_PIN       0
 
 //i2c devices defines
 #define DAC1_ADDR       0x60
@@ -151,11 +151,13 @@ int heat_i = 0;
 #define RsH   1.5
 #define RsS   22000
 float Vcc=5.0;       //for serial output
+float Vss=2.5;
 
-const int REF_INTERVAL = 500; //want a sample every 100ms
+const int REF_INTERVAL = 1000; //want a sample every 1000ms
 unsigned long lastRefresh = 0;
 unsigned long test_start = 0;
-const unsigned long test_duration = 1000000; //get 100 seconds of data from start of serial monitoring
+const unsigned long test_duration = 2000000; //get 200 seconds of data from start of serial monitoring
+const int num_averages = 6;
 
 // Entry point for the example
 void setup(void)
@@ -218,8 +220,8 @@ void setup(void)
   /*end checking i2c devices*/
 
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
-  output = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
-  Serial.println(output);
+  // output = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
+  // Serial.println(output);
   checkIaqSensorStatus();
   //pinMode(A0, INPUT);
 
@@ -242,10 +244,10 @@ void setup(void)
   ads1.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
     ads2.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
       ads3.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
-      ads4.setGain(GAIN_TWOTHIRDS);
+      ads4.setGain(GAIN_ONE);
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
-  output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%], Static IAQ, CO2 equivalent, breath VOC equivalent";
+  output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss";
   Serial.println(output);
 
   //i2c unit test. 
@@ -261,6 +263,7 @@ void setup(void)
   mcp1.setChannelValue(MQ4_DAC_CH, (2800)); 
   mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
   mcp2.setChannelValue(MQ7_DAC_CH, (2800)); 
+  delay(1000*300); //delay 5 min for bme688
   test_start = millis();
   //calibrate the MQ sensor. 
   //_rzero = getCorrectedRZero(iaqSensor.temperature, iaqSensor.humidity);
@@ -309,7 +312,7 @@ void loop(void)
     iaqSensor.run();
     String output;
     float voltage;
-    Vcc = VCC_ADC.computeVolts(VCC_ADC.readADC_SingleEnded(VCC_PIN)); //read the supply voltage at the start of each half second interval.
+    
 
     //GET ALL OF THE HEATER VOLTAGES
     float h135, h2, h8, h4, h3, h7;
@@ -330,12 +333,14 @@ void loop(void)
     h3 = ((Vcc - h3) * 1.5 )/ h3;
     h7 = ((Vcc - h7) * 1.5 )/ h7;
 
-    MQ135_ADC.setGain(GAIN_TWOTHIRDS); //reset gains
-    MQ8_ADC.setGain(GAIN_TWOTHIRDS);
-    MQ3_ADC.setGain(GAIN_TWOTHIRDS);
+    MQ135_ADC.setGain(GAIN_TWO); //reset gains
+    MQ8_ADC.setGain(GAIN_TWO);
+    MQ3_ADC.setGain(GAIN_TWO);
 
     float s135 = 0, s2 = 0, s8 = 0, s4 = 0, s3 = 0, s7 = 0;
-    for (int i = 0; i< 3; i++){ //collect the three data points per sensor
+    Vss = 0;
+    for (int i = 0; i< num_averages; i++){ //collect the three data points per sensor
+      Vss += VSS_ADC.readADC_SingleEnded(VSS_PIN); //read the supply voltage at the start of each half second interval.
       s135 += MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN);
       s2 += MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN);
       s8 += MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN);
@@ -343,43 +348,46 @@ void loop(void)
       s3 += MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN);
       s7 += MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN);
     }
-    s135 = s135/3; //calculate the average
-    s2 = s2/3;
-    s8 = s8/3;
-    s4 = s4/3;
-    s3 = s3/3;
-    s7 = s7/3;
+    s135 = s135/num_averages; //calculate the average
+    s2 = s2/num_averages;
+    s8 = s8/num_averages;
+    s4 = s4/num_averages;
+    s3 = s3/num_averages;
+    s7 = s7/num_averages;
+
+    Vss = Vss /num_averages;
+    Vss = VSS_ADC.computeVolts(Vss); //convert the measurement to volts
     //String(iaqSensor.temperature)
-    output = String(current)+ "," + String(iaqSensor.temperature)+ "," + String(iaqSensor.humidity) + ",time+temp+humid";
-    output +=  ",135:," + String(h135); //output the heater resistance and the sense resistance for all sensors
+    output = String((current/1000))+ "," + String(iaqSensor.temperature)+ "," + String(iaqSensor.humidity);
+    output +=  "," + String(h135,3); //output the heater resistance and the sense resistance for all sensors
     voltage = MQ135_ADC.computeVolts(s135);
-    voltage = ((Vcc - voltage) * RsS )/ voltage;
-    output += "," + String(voltage) + ",";
+    voltage = ((Vss - voltage) * RsS )/ voltage;
+    output += "," + String(voltage,3);
 
-    output += "2:," +String(h2);
+    output += "," +String(h2,3);
     voltage = MQ2_ADC.computeVolts(s2);
-    voltage = ((Vcc - voltage) * RsS )/ voltage;
-    output += "," + String(voltage) + ",";
+    voltage = ((Vss - voltage) * RsS )/ voltage;
+    output += "," + String(voltage,3);
 
-    output += "8:," + String(h8);
+    output += "," + String(h8,3);
     voltage = MQ8_ADC.computeVolts(s8);
-    voltage = ((Vcc - voltage) * RsS )/ voltage;
-    output += "," + String(voltage) + ",";
+    voltage = ((Vss - voltage) * RsS )/ voltage;
+    output += "," + String(voltage,3);
 
-    output += "4:," +String(h4);
+    output += "," +String(h4,3);
     voltage = MQ4_ADC.computeVolts(s4);
-    voltage = ((Vcc - voltage) * RsS )/ voltage;
-    output += "," + String(voltage) + ",";
+    voltage = ((Vss - voltage) * RsS )/ voltage;
+    output += "," + String(voltage,3);
 
-    output += "3:," +String(h3);
+    output += "," +String(h3,3);
     voltage = MQ3_ADC.computeVolts(s3);
-    voltage = ((Vcc - voltage) * RsS )/ voltage;
-    output += "," + String(voltage) + ",";
+    voltage = ((Vss - voltage) * RsS )/ voltage;
+    output += "," + String(voltage,3);
 
-    output += "7:," + String(h7);
+    output += "," + String(h7,3);
     voltage = MQ7_ADC.computeVolts(s7);
-    voltage = ((Vcc - voltage) * RsS )/ voltage;
-    output += "," + String(voltage) + "," + String(Vcc);
+    voltage = ((Vss - voltage) * RsS )/ voltage;
+    output += "," + String(voltage,3 ) + "," + String(Vss, 4);
 
     Serial.println(output);
     //delay(1000);
