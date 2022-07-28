@@ -32,7 +32,6 @@
 
 //test define 
 //#define i2c_test    true
-#define adc_test    true
 #define enose_calib true
 
 // Helper functions declarations
@@ -147,10 +146,10 @@ Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 
 //for heater use
 int heat_i = 0;
-#define RsH   1.5
-#define RsS   22000
-float Vcc=5.0;       //for serial output
-float Vss=2.5;
+#define RsH   1.5     //sense resistors on the gas sensor heaters. 
+#define RsS   22000   //sense resistors on the gas sensors. 
+float Vcc=5.0;       //heater voltage
+float Vss=2.5;        //starting sense resistor voltage, will be calculated each run
 
 const int REF_INTERVAL = 1000; //want a sample every 1000ms
 unsigned long lastRefresh = 0;
@@ -240,10 +239,10 @@ void setup(void)
   iaqSensor.updateSubscription(sensorList, 10, BSEC_SAMPLE_RATE_LP);
   checkIaqSensorStatus();
 
-  ads1.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
-    ads2.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
-      ads3.setGain(GAIN_TWOTHIRDS); //this will set the range to 0-4.1 V with 12mV resolution
-      ads4.setGain(GAIN_ONE);
+  ads1.setGain(GAIN_TWOTHIRDS); //set original gain on each of the adc to avoid accidentally being in high gain
+  ads2.setGain(GAIN_TWOTHIRDS); 
+  ads3.setGain(GAIN_TWOTHIRDS); 
+  ads4.setGain(GAIN_ONE);
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
   output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss";
@@ -262,7 +261,6 @@ void setup(void)
   mcp1.setChannelValue(MQ4_DAC_CH, (2800)); 
   mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
   mcp2.setChannelValue(MQ7_DAC_CH, (2800)); 
-  delay(1000*300); //delay 5 min for bme688
   test_start = millis();
   //calibrate the MQ sensor. 
   //_rzero = getCorrectedRZero(iaqSensor.temperature, iaqSensor.humidity);
@@ -271,12 +269,9 @@ void setup(void)
 // Function that is looped forever
 void loop(void)
 {
-  //float Vcc = 5.0;
-  
   // //MQ135 gasSensor = MQ135(A0, 10.91, 22);
   // unsigned long time_trigger = millis();
   // if (iaqSensor.run()) { // If new data is available
-
   //   output = String(time_trigger/1000);
   //   // output += ", " + String(iaqSensor.rawTemperature);
   //   // output += ", " + String(iaqSensor.pressure);
@@ -305,9 +300,6 @@ void loop(void)
   unsigned long current = millis();
   if ( (current - lastRefresh >= REF_INTERVAL) && ((current - test_start) < test_duration)){
 
-  
-    //test
-    #if adc_test
     iaqSensor.run();
     String output;
     float voltage;
@@ -390,7 +382,6 @@ void loop(void)
 
     Serial.println(output);
     //delay(1000);
-    #endif
     lastRefresh = current;
   }
   else if ((current - test_start) > test_duration){
