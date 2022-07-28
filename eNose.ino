@@ -13,7 +13,9 @@
  *        MQ-135/2/3/4/8/7
  *        BME688 - 0x76/0x77
  *        ADS1115 - 0x48, 0x49, 0x4A, 0x4B
- *        MCP4728 - 0x60, 0x61
+ *        MCP4728 - 0x60, 0x63 
+ *        SCD30 - 0x61
+ *        SCD41 - 0x62
  *        
  *        Gravity Infared V1.1
  *      MCU:
@@ -37,6 +39,7 @@ SCD4x scd41;
 
 //test define 
 //#define i2c_test    true
+#define enose_calib    true
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
@@ -155,6 +158,10 @@ int heat_i = 0;
 float Vcc=5.0;       //heater voltage
 float Vss=2.5;        //starting sense resistor voltage, will be calculated each run
 
+float co230 = 0; //keep old data
+float co241 = 0;
+
+
 const int REF_INTERVAL = 1000; //want a sample every 1000ms
 unsigned long lastRefresh = 0;
 unsigned long test_start = 0;
@@ -168,9 +175,7 @@ void setup(void)
   #if i2c_test
     while(!Serial) //wait for the serial connection 
   #endif
-  #if enose_calib
-    while(!Serial)
-  #endif
+
   Wire.begin();
 
   /*check i2c devices are on bus and addresses correctly*/
@@ -260,7 +265,10 @@ void setup(void)
   ads4.setGain(GAIN_ONE);
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
-  output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss, co2_30, co2_41";
+  #if enose_calib
+    while(!Serial)
+  #endif
+  output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss, co2_30, co2_41, co241temp, co241humid";
   Serial.println(output);
 
   //i2c unit test. 
@@ -319,8 +327,12 @@ void loop(void)
     String output;
     float voltage;
     
-    float co230 = scd30.getCO2();
-    float co241 = scd41.getCO2();
+    if (scd30.dataAvailable()){
+      co230 = scd30.getCO2();
+    }
+    if (scd41.readMeasurement()){
+      co241 = scd41.getCO2();
+    }
 
     //GET ALL OF THE HEATER VOLTAGES
     float h135, h2, h8, h4, h3, h7;
@@ -395,7 +407,8 @@ void loop(void)
     output += "," + String(h7,3);
     voltage = MQ7_ADC.computeVolts(s7);
     voltage = ((Vss - voltage) * RsS )/ voltage;
-    output += "," + String(voltage,3 ) + "," + String(Vss, 4) + "," + co230 + "," + co241;
+    output += "," + String(voltage,3 ) + "," + String(Vss, 4) + "," + co230 + "," + co241 + "," +
+              String(scd41.getTemperature(), 2)+ "," + String(scd41.getHumidity(),2);
 
     Serial.println(output);
     //delay(1000);
