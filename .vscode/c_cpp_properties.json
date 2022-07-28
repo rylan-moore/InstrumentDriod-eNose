@@ -32,6 +32,8 @@
                 "C:\\Users\\rylan\\Documents\\Arduino\\libraries\\Adafruit_ADS1X15",
                 "C:\\Users\\rylan\\Documents\\Arduino\\libraries\\Adafruit_BusIO",
                 "C:\\Users\\rylan\\Documents\\Arduino\\libraries\\Adafruit_MCP4728",
+                "C:\\Users\\rylan\\Documents\\Arduino\\libraries\\SparkFun_SCD30_Arduino_Library\\src",
+                "C:\\Users\\rylan\\Documents\\Arduino\\libraries\\SparkFun_SCD4x_Arduino_Library\\src",
                 "c:\\users\\rylan\\appdata\\local\\arduino15\\packages\\adafruit\\tools\\arm-none-eabi-gcc\\9-2019q4\\arm-none-eabi\\include\\c++\\9.2.1",
                 "c:\\users\\rylan\\appdata\\local\\arduino15\\packages\\adafruit\\tools\\arm-none-eabi-gcc\\9-2019q4\\arm-none-eabi\\include\\c++\\9.2.1\\arm-none-eabi",
                 "c:\\users\\rylan\\appdata\\local\\arduino15\\packages\\adafruit\\tools\\arm-none-eabi-gcc\\9-2019q4\\arm-none-eabi\\include\\c++\\9.2.1\\backward",

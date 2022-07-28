@@ -28,11 +28,15 @@
 #include "bsec.h"
 #include <Adafruit_ADS1X15.h>
 #include <Adafruit_MCP4728.h>
+//add new co2 sensors
+#include "SparkFun_SCD30_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD30
+SCD30 scd30;
+#include "SparkFun_SCD4x_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD4x
+SCD4x scd41;
 //#include "MQ135.h"
 
 //test define 
 //#define i2c_test    true
-#define enose_calib true
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
@@ -50,7 +54,7 @@ float getPPMgravity(void);
 // Create an object of the class Bsec
 Bsec iaqSensor;
 
-String output;
+String output; //used for serial output
 
 Adafruit_ADS1115 ads1; //0x48
 Adafruit_ADS1115 ads2; //0x49
@@ -215,6 +219,17 @@ void setup(void)
       delay(10);
     }
   }
+  if (scd30.begin() == false){
+    Serial.println("Failed to find SCD30");
+    while (1)
+      ;
+  }
+
+  if (scd41.begin() == false){
+    Serial.println("Failed to find SCD41");
+    while (1)
+      ;
+  }
   /*end checking i2c devices*/
 
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
@@ -245,7 +260,7 @@ void setup(void)
   ads4.setGain(GAIN_ONE);
   //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
   // Print the header
-  output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss";
+  output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss, co2_30, co2_41";
   Serial.println(output);
 
   //i2c unit test. 
@@ -304,6 +319,8 @@ void loop(void)
     String output;
     float voltage;
     
+    float co230 = scd30.getCO2();
+    float co241 = scd41.getCO2();
 
     //GET ALL OF THE HEATER VOLTAGES
     float h135, h2, h8, h4, h3, h7;
@@ -378,7 +395,7 @@ void loop(void)
     output += "," + String(h7,3);
     voltage = MQ7_ADC.computeVolts(s7);
     voltage = ((Vss - voltage) * RsS )/ voltage;
-    output += "," + String(voltage,3 ) + "," + String(Vss, 4);
+    output += "," + String(voltage,3 ) + "," + String(Vss, 4) + "," + co230 + "," + co241;
 
     Serial.println(output);
     //delay(1000);
