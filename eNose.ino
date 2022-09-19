@@ -23,6 +23,8 @@
  * 
  * Current version collects data from all sensors and reports it over serial to a host. 
  * This needs to be adjusted in the future to be calibrated and then run program to detect gasses. 
+ * 
+ * New use case is going to be something with beer or the darkness of beer. 
  */
 
 
@@ -80,9 +82,9 @@ Adafruit_ADS1115 ads4; //ox4a
 // #define CORG 1.130128205
 
 /// Atmospheric CO2 level for calibration purposes
-#define ATMOCO2 420 //Global CO2 Aug 2021
-#define _rload  20.1
-#define _rzero  8.1//10.91
+// #define ATMOCO2 420 //Global CO2 Aug 2021
+// #define _rload  20.1
+// #define _rzero  8.1//10.91
 
 //begin sensor defines 
 
