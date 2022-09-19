@@ -93,61 +93,61 @@ Adafruit_ADS1115 ads4; //ox4a
   #define MQ135_RS_PIN  1 //channel on the adc that the sense resistor is on
   #define MQ135_RH_PIN  0 //channel on the adc that the heat sense resistor is on
 
-  #define MQ135_DAC     mcp1 //define wich dac the MQ135 heater is on
-  #define MQ135_DAC_CH  MCP4728_CHANNEL_B //channel on the dac that the heater is on
+  // #define MQ135_DAC     mcp1 //define wich dac the MQ135 heater is on
+  // #define MQ135_DAC_CH  MCP4728_CHANNEL_B //channel on the dac that the heater is on
 
 //info for the MQ-2 sensor
   #define MQ2_ADC     ads1 //define which adc the MQ135 is on
   #define MQ2_RS_PIN  3 //channel on the adc that the sense resistor is on
   #define MQ2_RH_PIN  2 //channel on the adc that the heat sense resistor is on
 
-  #define MQ2_DAC     mcp1 //define wich dac the MQ135 heater is on
-  #define MQ2_DAC_CH MCP4728_CHANNEL_A //channel on the dac that the heater is on
+  // #define MQ2_DAC     mcp1 //define wich dac the MQ135 heater is on
+  // #define MQ2_DAC_CH MCP4728_CHANNEL_A //channel on the dac that the heater is on
 
 //info for the MQ-8 sensor
   #define MQ8_ADC     ads2 //define which adc the MQ135 is on
   #define MQ8_RS_PIN  1 //channel on the adc that the sense resistor is on
   #define MQ8_RH_PIN  0 //channel on the adc that the heat sense resistor is on
 
-  #define MQ8_DAC     mcp1 //define wich dac the MQ135 heater is on
-  #define MQ8_DAC_CH  MCP4728_CHANNEL_D //channel on the dac that the heater is on
+  // #define MQ8_DAC     mcp1 //define wich dac the MQ135 heater is on
+  // #define MQ8_DAC_CH  MCP4728_CHANNEL_D //channel on the dac that the heater is on
 
 //info for the MQ-4 sensor
   #define MQ4_ADC     ads2 //define which adc the MQ135 is on
   #define MQ4_RS_PIN  3 //channel on the adc that the sense resistor is on
   #define MQ4_RH_PIN  2 //channel on the adc that the heat sense resistor is on
 
-  #define MQ4_DAC     mcp1 //define wich dac the MQ135 heater is on
-  #define MQ4_DAC_CH  MCP4728_CHANNEL_C //channel on the dac that the heater is on
+  // #define MQ4_DAC     mcp1 //define wich dac the MQ135 heater is on
+  // #define MQ4_DAC_CH  MCP4728_CHANNEL_C //channel on the dac that the heater is on
 
 //info for the MQ-3 sensor
   #define MQ3_ADC     ads3 //define which adc the MQ135 is on
   #define MQ3_RS_PIN  1 //channel on the adc that the sense resistor is on
   #define MQ3_RH_PIN  0 //channel on the adc that the heat sense resistor is on
 
-  #define MQ3_DAC     mcp2 //define wich dac the MQ135 heater is on
-  #define MQ3_DAC_CH  MCP4728_CHANNEL_A //channel on the dac that the heater is on
+  // #define MQ3_DAC     mcp2 //define wich dac the MQ135 heater is on
+  // #define MQ3_DAC_CH  MCP4728_CHANNEL_A //channel on the dac that the heater is on
 
 //info for the MQ-7 sensor
   #define MQ7_ADC     ads3 //define which adc the MQ135 is on
   #define MQ7_RS_PIN  3 //channel on the adc that the sense resistor is on
   #define MQ7_RH_PIN  2 //channel on the adc that the heat sense resistor is on
 
-  #define MQ7_DAC     mcp2 //define wich dac the MQ135 heater is on
-  #define MQ7_DAC_CH  MCP4728_CHANNEL_B //channel on the dac that the heater is on
+  // #define MQ7_DAC     mcp2 //define wich dac the MQ135 heater is on
+  // #define MQ7_DAC_CH  MCP4728_CHANNEL_B //channel on the dac that the heater is on
 
 //info for the IR CO2 sensor
-  #define IR_ADC        adsX //define which adc the IR CO2 sensor is on
-  #define IR_PIN        2 //channel on the adc where the IR analog in is located. 
-  #define InfaredIn     2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
+  // #define IR_ADC        adsX //define which adc the IR CO2 sensor is on
+  // #define IR_PIN        2 //channel on the adc where the IR analog in is located. 
+  // #define InfaredIn     2 //This sensor is installed on the Input A2 on the ADS1115 with default address in single ended mode
 
 //end sensor define section
   #define VSS_ADC       ads4
   #define VSS_PIN       0
 
 //i2c devices defines
-#define DAC1_ADDR       0x60
-#define DAC2_ADDR       0x61
+// #define DAC1_ADDR       0x60
+// #define DAC2_ADDR       0x61
 #define ADC1_ADDR       0x48
 #define ADC2_ADDR       0x49
 #define ADC3_ADDR       0x4b
@@ -157,14 +157,14 @@ Adafruit_ADS1115 ads4; //ox4a
 int heat_i = 0;
 #define RsH   1.5     //sense resistors on the gas sensor heaters. 
 #define RsS   22000   //sense resistors on the gas sensors. 
-float Vcc=5.0;       //heater voltage
+float Vcc=5.0;       //heater voltage, will be re-calculated each run
 float Vss=2.5;        //starting sense resistor voltage, will be calculated each run
 
-float co230 = 0; //keep old data
-float co241 = 0;
+// float co230 = 0; //keep old data
+// float co241 = 0;
 
 
-const int REF_INTERVAL = 1000; //want a sample every 1000ms
+const int REF_INTERVAL = 1000; //want a sample every 1000ms reported back over serial.
 unsigned long lastRefresh = 0;
 unsigned long test_start = 0;
 const unsigned long test_duration = 2000000; //get 200 seconds of data from start of serial monitoring
@@ -411,7 +411,7 @@ void loop(void)
     //output += "," + String(h7,3);
     voltage = MQ7_ADC.computeVolts(s7);
     voltage = ((Vss - voltage) * RsS )/ voltage;
-    output += "," + String(voltage,3 ) + "," + String(Vss, 4) + "," + co230 + "," + co241 + "," +
+    output += "," + String(voltage,3 ) + "," + String(Vss, 4);// + "," + co230 + "," + co241 + "," +
     //          String(scd41.getTemperature(), 2)+ "," + String(scd41.getHumidity(),2);
 
     Serial.println(output);
