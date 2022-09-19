@@ -45,14 +45,14 @@
 void checkIaqSensorStatus(void);
 void errLeds(void);
 
-float getCorrectionFactor(float t, float h);
-float getCorrectedResistance(float t, float h);
-float getResistance(int sensor);
-float getCorrectedPPM(float t, float h);
-float getCorrectedRZero(float t, float h);
-float getPPM();
+// float getCorrectionFactor(float t, float h);
+// float getCorrectedResistance(float t, float h);
+// float getResistance(int sensor);
+// float getCorrectedPPM(float t, float h);
+// float getCorrectedRZero(float t, float h);
+// float getPPM();
 
-float getPPMgravity(void);
+// float getPPMgravity(void);
 
 // Create an object of the class Bsec
 Bsec iaqSensor;
@@ -66,18 +66,18 @@ Adafruit_ADS1115 ads4; //ox4a
 // Adafruit_MCP4728 mcp1; //0x60
 // Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 
-//for MQ-135
-#define PARA 116.6020682
-#define PARB -2.769034857
+// //for MQ-135
+// #define PARA 116.6020682
+// #define PARB -2.769034857
 
-/// Parameters to model temperature and humidity dependence
-#define CORA .00035
-#define CORB .02718
-#define CORC 1.39538
-#define CORD .0018
-#define CORE -.003333333
-#define CORF -.001923077
-#define CORG 1.130128205
+// /// Parameters to model temperature and humidity dependence
+// #define CORA .00035
+// #define CORB .02718
+// #define CORC 1.39538
+// #define CORD .0018
+// #define CORE -.003333333
+// #define CORF -.001923077
+// #define CORG 1.130128205
 
 /// Atmospheric CO2 level for calibration purposes
 #define ATMOCO2 420 //Global CO2 Aug 2021
@@ -469,17 +469,17 @@ void errLeds(void){
 @return The calculated correction factor
 */
 /**************************************************************************/
-float getCorrectionFactor(float t, float h) {
-    // Linearization of the temperature dependency curve under and above 20 degree C
-    // below 20degC: fact = a * t * t - b * t - (h - 33) * d
-    // above 20degC: fact = a * t + b * h + c
-    // this assumes a linear dependency on humidity
-    if(t < 20){
-        return CORA * t * t - CORB * t + CORC - (h-33.)*CORD;
-    } else {
-        return CORE * t + CORF * h + CORG;
-    }
-}
+// float getCorrectionFactor(float t, float h) {
+//     // Linearization of the temperature dependency curve under and above 20 degree C
+//     // below 20degC: fact = a * t * t - b * t - (h - 33) * d
+//     // above 20degC: fact = a * t + b * h + c
+//     // this assumes a linear dependency on humidity
+//     if(t < 20){
+//         return CORA * t * t - CORB * t + CORC - (h-33.)*CORD;
+//     } else {
+//         return CORE * t + CORF * h + CORG;
+//     }
+// }
 
 /**************************************************************************/
 /*!
@@ -492,9 +492,9 @@ float getCorrectionFactor(float t, float h) {
 @return The corrected sensor resistance kOhm
 */
 /**************************************************************************/
-float getCorrectedResistance(float t, float h) {
-  return getResistance()/getCorrectionFactor(t, h);
-}
+// float getCorrectedResistance(float t, float h) {
+//   return getResistance()/getCorrectionFactor(t, h);
+// }
 
 /**************************************************************************/
 /*!
@@ -505,25 +505,25 @@ float getCorrectedResistance(float t, float h) {
 @return The sensor resistance in kOhm
 */
 /**************************************************************************/
-float getResistance(void) { 
-    ads1.setGain(GAIN_ONE);
-    //int  val = ads.readADC_Differential_0_1();
-    int val = ads1.readADC_SingleEnded(0);
-    float fval = val * (0.125/1000);
+// float getResistance(void) { 
+//     ads1.setGain(GAIN_ONE);
+//     //int  val = ads.readADC_Differential_0_1();
+//     int val = ads1.readADC_SingleEnded(0);
+//     float fval = val * (0.125/1000);
 
-    ads1.setGain(GAIN_TWOTHIRDS);
-    val = ads1.readADC_SingleEnded(1); //read the refrence voltage
-    //float rval = val *(0.1875/1000);
-    float rval = 5.0; //this may work but could need to be changed as well. OUT of adc channels 
-    //Serial.println(val);
-    //val = (val*4.1)/5;
-    //Serial.println(val);
-  //this will need to be changed in order to collect data from the external ADC
-  //return ((32768./(float)val) - 1.)*_rload;
-  return _rload*((rval - fval)/ fval);
-  //return _rload* ((1 - ((float)val / 32768.)) / ((float)val / 32768.) );
+//     ads1.setGain(GAIN_TWOTHIRDS);
+//     val = ads1.readADC_SingleEnded(1); //read the refrence voltage
+//     //float rval = val *(0.1875/1000);
+//     float rval = 5.0; //this may work but could need to be changed as well. OUT of adc channels 
+//     //Serial.println(val);
+//     //val = (val*4.1)/5;
+//     //Serial.println(val);
+//   //this will need to be changed in order to collect data from the external ADC
+//   //return ((32768./(float)val) - 1.)*_rload;
+//   return _rload*((rval - fval)/ fval);
+//   //return _rload* ((1 - ((float)val / 32768.)) / ((float)val / 32768.) );
 
-}
+// }
 
 /**************************************************************************/
 /*!
@@ -536,14 +536,14 @@ float getResistance(void) {
 @return The ppm of CO2 in the air
 */
 /**************************************************************************/
-float getCorrectedPPM(float t, float h) {
-  float store;
-  for (int i = 0; i < 32; i++){
-    store += PARA * pow((getCorrectedResistance(t, h)/_rzero), -PARB);
-  }
-  return (store/32);
+// float getCorrectedPPM(float t, float h) {
+//   float store;
+//   for (int i = 0; i < 32; i++){
+//     store += PARA * pow((getCorrectedResistance(t, h)/_rzero), -PARB);
+//   }
+//   return (store/32);
   
-}
+// }
 
 /**************************************************************************/
 /*!
@@ -552,11 +552,11 @@ float getCorrectedPPM(float t, float h) {
 @return The ppm of CO2 in the air
 */
 /**************************************************************************/
-float getPPM() {
-  //Serial.println(getResistance());
-  return PARA * pow((getResistance()/_rzero), -PARB);
+// float getPPM() {
+//   //Serial.println(getResistance());
+//   return PARA * pow((getResistance()/_rzero), -PARB);
 
-}
+// }
 
 /**************************************************************************/
 /*!
@@ -566,9 +566,9 @@ float getPPM() {
 @return The sensor resistance RZero in kOhm
 */
 /**************************************************************************/
-float getCorrectedRZero(float t, float h) { 
-  return getCorrectedResistance(t, h) * pow((ATMOCO2/PARA), (1./PARB));
-}
+// float getCorrectedRZero(float t, float h) { 
+//   return getCorrectedResistance(t, h) * pow((ATMOCO2/PARA), (1./PARB));
+// }
 
 
 /**
@@ -579,15 +579,15 @@ float getCorrectedRZero(float t, float h) {
  * @return float 
  * Return CO2 in PPM
  */
-float getPPMgravity(void){
-  ads1.setGain(GAIN_TWO); //change the gain to make this reading more accurate. 
-  int rawd = ads1.readADC_SingleEnded(InfaredIn); //Read the raw data. 
-  float rawf = ads1.computeVolts(rawd); //convert to volts. 
-  if(rawf < 0.4){
-    return 0;
-  }
-  else{
-    return (3125*rawf)-1250;
-  }
-  return -1;
-}
+// float getPPMgravity(void){
+//   ads1.setGain(GAIN_TWO); //change the gain to make this reading more accurate. 
+//   int rawd = ads1.readADC_SingleEnded(InfaredIn); //Read the raw data. 
+//   float rawf = ads1.computeVolts(rawd); //convert to volts. 
+//   if(rawf < 0.4){
+//     return 0;
+//   }
+//   else{
+//     return (3125*rawf)-1250;
+//   }
+//   return -1;
+// }
