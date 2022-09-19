@@ -1,6 +1,7 @@
 {
-    "configuration": "opt=small,usbstack=arduino,debug=off",
     "board": "adafruit:samd:adafruit_qtpy_m0",
     "sketch": "eNose.ino",
-    "port": "COM6"
+    "port": "COM6",
+    "programmer": "adafruit:adafruit_jlink",
+    "configuration": "opt=small,usbstack=arduino,debug=off"
 }

@@ -166,7 +166,7 @@ const int REF_INTERVAL = 1000; //want a sample every 1000ms
 unsigned long lastRefresh = 0;
 unsigned long test_start = 0;
 const unsigned long test_duration = 2000000; //get 200 seconds of data from start of serial monitoring
-const int num_averages = 6;
+const int num_averages = 10;
 
 // Entry point for the example
 void setup(void)
@@ -180,25 +180,25 @@ void setup(void)
 
   /*check i2c devices are on bus and addresses correctly*/
   //check the status of the dac  
-  if (!mcp1.begin(DAC1_ADDR)) {
-    Serial.println("Failed to find DAC1");
-    while (1) {
-      delay(10);
-    }
-  }
-    if (!mcp2.begin(DAC2_ADDR)) { //start the second dac with other address
-    Serial.println("Failed to find DAC2");
-    while (1) {
-      delay(10);
-    }
-  }
+  // if (!mcp1.begin(DAC1_ADDR)) {
+  //   Serial.println("Failed to find DAC1");
+  //   while (1) {
+  //     delay(10);
+  //   }
+  // }
+  //   if (!mcp2.begin(DAC2_ADDR)) { //start the second dac with other address
+  //   Serial.println("Failed to find DAC2");
+  //   while (1) {
+  //     delay(10);
+  //   }
+  // }
   //set all of the dac channels to 0 to avoid over current. 
-    mcp1.setChannelValue(MQ135_DAC_CH, (0)); 
-    mcp1.setChannelValue(MQ2_DAC_CH, (0)); 
-    mcp1.setChannelValue(MQ8_DAC_CH, (0)); 
-    mcp1.setChannelValue(MQ4_DAC_CH, (0)); 
-    mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
-    mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
+    // mcp1.setChannelValue(MQ135_DAC_CH, (0)); 
+    // mcp1.setChannelValue(MQ2_DAC_CH, (0)); 
+    // mcp1.setChannelValue(MQ8_DAC_CH, (0)); 
+    // mcp1.setChannelValue(MQ4_DAC_CH, (0)); 
+    // mcp2.setChannelValue(MQ3_DAC_CH, (0)); 
+    // mcp2.setChannelValue(MQ7_DAC_CH, (0)); 
   //check status of the adcs 
   if (!ads1.begin(ADC1_ADDR, &Wire)){
     Serial.println("Failed to find ADC1");
@@ -224,17 +224,17 @@ void setup(void)
       delay(10);
     }
   }
-  if (scd30.begin() == false){
-    Serial.println("Failed to find SCD30");
-    while (1)
-      ;
-  }
+  // if (scd30.begin() == false){
+  //   Serial.println("Failed to find SCD30");
+  //   while (1)
+  //     ;
+  // }
 
-  if (scd41.begin() == false){
-    Serial.println("Failed to find SCD41");
-    while (1)
-      ;
-  }
+  // if (scd41.begin() == false){
+  //   Serial.println("Failed to find SCD41");
+  //   while (1)
+  //     ;
+  // }
   /*end checking i2c devices*/
 
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
@@ -278,12 +278,12 @@ void setup(void)
       delay(10);
     }
   #endif
-  mcp1.setChannelValue(MQ135_DAC_CH, (2800)); //turn the heaters on to start. 
-  mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
-  mcp1.setChannelValue(MQ8_DAC_CH, (2800)); 
-  mcp1.setChannelValue(MQ4_DAC_CH, (2800)); 
-  mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
-  mcp2.setChannelValue(MQ7_DAC_CH, (2800)); 
+  // mcp1.setChannelValue(MQ135_DAC_CH, (2800)); //turn the heaters on to start. 
+  // mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
+  // mcp1.setChannelValue(MQ8_DAC_CH, (2800)); 
+  // mcp1.setChannelValue(MQ4_DAC_CH, (2800)); 
+  // mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
+  // mcp2.setChannelValue(MQ7_DAC_CH, (2800)); 
   test_start = millis();
   //calibrate the MQ sensor. 
   //_rzero = getCorrectedRZero(iaqSensor.temperature, iaqSensor.humidity);
@@ -335,23 +335,23 @@ void loop(void)
     }
 
     //GET ALL OF THE HEATER VOLTAGES
-    float h135, h2, h8, h4, h3, h7;
-    MQ135_ADC.setGain(GAIN_FOUR);
-    h135 = MQ135_ADC.computeVolts(MQ135_ADC.readADC_SingleEnded(MQ135_RH_PIN));
-    h2 = MQ2_ADC.computeVolts(MQ2_ADC.readADC_SingleEnded(MQ2_RH_PIN));
-    MQ8_ADC.setGain(GAIN_FOUR);
-    h8 = MQ8_ADC.computeVolts(MQ8_ADC.readADC_SingleEnded(MQ8_RH_PIN));
-    h4 = MQ4_ADC.computeVolts(MQ4_ADC.readADC_SingleEnded(MQ4_RH_PIN));
-    MQ3_ADC.setGain(GAIN_FOUR);
-    h3 = MQ3_ADC.computeVolts(MQ3_ADC.readADC_SingleEnded(MQ3_RH_PIN));
-    h7 = MQ7_ADC.computeVolts(MQ7_ADC.readADC_SingleEnded(MQ7_RH_PIN));
+    // float h135, h2, h8, h4, h3, h7;
+    // MQ135_ADC.setGain(GAIN_FOUR);
+    // h135 = MQ135_ADC.computeVolts(MQ135_ADC.readADC_SingleEnded(MQ135_RH_PIN));
+    // h2 = MQ2_ADC.computeVolts(MQ2_ADC.readADC_SingleEnded(MQ2_RH_PIN));
+    // MQ8_ADC.setGain(GAIN_FOUR);
+    // h8 = MQ8_ADC.computeVolts(MQ8_ADC.readADC_SingleEnded(MQ8_RH_PIN));
+    // h4 = MQ4_ADC.computeVolts(MQ4_ADC.readADC_SingleEnded(MQ4_RH_PIN));
+    // MQ3_ADC.setGain(GAIN_FOUR);
+    // h3 = MQ3_ADC.computeVolts(MQ3_ADC.readADC_SingleEnded(MQ3_RH_PIN));
+    // h7 = MQ7_ADC.computeVolts(MQ7_ADC.readADC_SingleEnded(MQ7_RH_PIN));
 
-    h135 = ((Vcc - h135) * 1.5 )/ h135; //compute resistances 
-    h2 = ((Vcc - h2) * 1.5 )/ h2;
-    h8 = ((Vcc - h8) * 1.5 )/ h8;
-    h4 = ((Vcc - h4) * 1.5 )/ h4;
-    h3 = ((Vcc - h3) * 1.5 )/ h3;
-    h7 = ((Vcc - h7) * 1.5 )/ h7;
+    // h135 = ((Vcc - h135) * 1.5 )/ h135; //compute resistances 
+    // h2 = ((Vcc - h2) * 1.5 )/ h2;
+    // h8 = ((Vcc - h8) * 1.5 )/ h8;
+    // h4 = ((Vcc - h4) * 1.5 )/ h4;
+    // h3 = ((Vcc - h3) * 1.5 )/ h3;
+    // h7 = ((Vcc - h7) * 1.5 )/ h7;
 
     MQ135_ADC.setGain(GAIN_TWO); //reset gains
     MQ8_ADC.setGain(GAIN_TWO);
@@ -379,36 +379,36 @@ void loop(void)
     Vss = VSS_ADC.computeVolts(Vss); //convert the measurement to volts
     //String(iaqSensor.temperature)
     output = String((current/1000))+ "," + String(iaqSensor.temperature)+ "," + String(iaqSensor.humidity);
-    output +=  "," + String(h135,3); //output the heater resistance and the sense resistance for all sensors
+    //output +=  "," + String(h135,3); //output the heater resistance and the sense resistance for all sensors
     voltage = MQ135_ADC.computeVolts(s135);
     voltage = ((Vss - voltage) * RsS )/ voltage;
     output += "," + String(voltage,3);
 
-    output += "," +String(h2,3);
+    //output += "," +String(h2,3);
     voltage = MQ2_ADC.computeVolts(s2);
     voltage = ((Vss - voltage) * RsS )/ voltage;
     output += "," + String(voltage,3);
 
-    output += "," + String(h8,3);
+    //output += "," + String(h8,3);
     voltage = MQ8_ADC.computeVolts(s8);
     voltage = ((Vss - voltage) * RsS )/ voltage;
     output += "," + String(voltage,3);
 
-    output += "," +String(h4,3);
+    //output += "," +String(h4,3);
     voltage = MQ4_ADC.computeVolts(s4);
     voltage = ((Vss - voltage) * RsS )/ voltage;
     output += "," + String(voltage,3);
 
-    output += "," +String(h3,3);
+    //output += "," +String(h3,3);
     voltage = MQ3_ADC.computeVolts(s3);
     voltage = ((Vss - voltage) * RsS )/ voltage;
     output += "," + String(voltage,3);
 
-    output += "," + String(h7,3);
+    //output += "," + String(h7,3);
     voltage = MQ7_ADC.computeVolts(s7);
     voltage = ((Vss - voltage) * RsS )/ voltage;
     output += "," + String(voltage,3 ) + "," + String(Vss, 4) + "," + co230 + "," + co241 + "," +
-              String(scd41.getTemperature(), 2)+ "," + String(scd41.getHumidity(),2);
+    //          String(scd41.getTemperature(), 2)+ "," + String(scd41.getHumidity(),2);
 
     Serial.println(output);
     //delay(1000);
