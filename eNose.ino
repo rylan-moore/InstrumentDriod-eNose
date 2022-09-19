@@ -4,8 +4,8 @@
  * @file eNose.ino
  * @author Rylan Moore (rylan.moore@colorado.edu)
  * @brief Enose project
- * @version 0.1
- * @date 2022-06-23
+ * @version 1.0
+ * @date 2022-09-19
  * 
  * @copyright Copyright (c) 2022
  * 
@@ -13,11 +13,11 @@
  *        MQ-135/2/3/4/8/7
  *        BME688 - 0x76/0x77
  *        ADS1115 - 0x48, 0x49, 0x4A, 0x4B
- *        MCP4728 - 0x60, 0x63 
- *        SCD30 - 0x61
- *        SCD41 - 0x62
+ *        MCP4728 - 0x60, 0x63 No longer used
+ *        SCD30 - 0x61 No longer used
+ *        SCD41 - 0x62 No longer used
  *        
- *        Gravity Infared V1.1
+ *        Gravity Infared V1.1 No longer used
  *      MCU:
  *        QT PY SAMD21
  * 
@@ -29,12 +29,12 @@
 
 #include "bsec.h"
 #include <Adafruit_ADS1X15.h>
-#include <Adafruit_MCP4728.h>
+// #include <Adafruit_MCP4728.h>
 //add new co2 sensors
-#include "SparkFun_SCD30_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD30
-SCD30 scd30;
-#include "SparkFun_SCD4x_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD4x
-SCD4x scd41;
+// #include "SparkFun_SCD30_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD30
+// SCD30 scd30;
+// #include "SparkFun_SCD4x_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD4x
+// SCD4x scd41;
 //#include "MQ135.h"
 
 //test define 
@@ -63,8 +63,8 @@ Adafruit_ADS1115 ads1; //0x48
 Adafruit_ADS1115 ads2; //0x49
 Adafruit_ADS1115 ads3; //0x4b
 Adafruit_ADS1115 ads4; //ox4a
-Adafruit_MCP4728 mcp1; //0x60
-Adafruit_MCP4728 mcp2; //0x61 (this was set already)
+// Adafruit_MCP4728 mcp1; //0x60
+// Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 
 //for MQ-135
 #define PARA 116.6020682
@@ -268,7 +268,9 @@ void setup(void)
   #if enose_calib
     while(!Serial)
   #endif
-  output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss, co2_30, co2_41, co241temp, co241humid";
+    output = "time, temp, humidity, RS135, RS2, RS8, RS4, RS3, RS7, Vss";
+
+  //output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss, co2_30, co2_41, co241temp, co241humid";
   Serial.println(output);
 
   //i2c unit test. 
@@ -327,12 +329,12 @@ void loop(void)
     String output;
     float voltage;
     
-    if (scd30.dataAvailable()){
-      co230 = scd30.getCO2();
-    }
-    if (scd41.readMeasurement()){
-      co241 = scd41.getCO2();
-    }
+    // if (scd30.dataAvailable()){
+    //   co230 = scd30.getCO2();
+    // }
+    // if (scd41.readMeasurement()){
+    //   co241 = scd41.getCO2();
+    // }
 
     //GET ALL OF THE HEATER VOLTAGES
     // float h135, h2, h8, h4, h3, h7;
@@ -353,7 +355,7 @@ void loop(void)
     // h3 = ((Vcc - h3) * 1.5 )/ h3;
     // h7 = ((Vcc - h7) * 1.5 )/ h7;
 
-    MQ135_ADC.setGain(GAIN_TWO); //reset gains
+    MQ135_ADC.setGain(GAIN_TWO); //reset gains This could likely move to void setup
     MQ8_ADC.setGain(GAIN_TWO);
     MQ3_ADC.setGain(GAIN_TWO);
 
