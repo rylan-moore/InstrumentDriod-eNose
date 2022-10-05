@@ -1,7 +1,7 @@
 {
-    "board": "adafruit:samd:adafruit_qtpy_m0",
+    "board": "esp32:esp32:XIAO_ESP32C3",
     "sketch": "eNose.ino",
-    "port": "COM6",
-    "programmer": "adafruit:adafruit_jlink",
-    "configuration": "opt=small,usbstack=arduino,debug=off"
+    "port": "COM10",
+    "programmer": "esp32:esptool",
+    "configuration": "CDCOnBoot=default,PartitionScheme=default,CPUFreq=160,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,DebugLevel=none,EraseFlash=none"
 }

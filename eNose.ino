@@ -270,7 +270,7 @@ void setup(void)
   #if enose_calib
     while(!Serial)
   #endif
-    output = "time, temp, humidity, RS135, RS2, RS8, RS4, RS3, RS7, Vss";
+    output = "time, temp, humidity, RS135, RS2, RS8, RS4, RS3, RS7, Vss, Sample_Time";
 
   //output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss, co2_30, co2_41, co241temp, co241humid";
   Serial.println(output);
@@ -363,6 +363,7 @@ void loop(void)
 
     float s135 = 0, s2 = 0, s8 = 0, s4 = 0, s3 = 0, s7 = 0;
     Vss = 0;
+    unsigned long avg_start = millis();
     for (int i = 0; i< num_averages; i++){ //collect the three data points per sensor
       Vss += VSS_ADC.readADC_SingleEnded(VSS_PIN); //read the supply voltage at the start of each half second interval.
       s135 += MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN);
@@ -372,6 +373,7 @@ void loop(void)
       s3 += MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN);
       s7 += MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN);
     }
+    unsigned long avg_end = millis();
     s135 = s135/num_averages; //calculate the average
     s2 = s2/num_averages;
     s8 = s8/num_averages;
@@ -413,7 +415,7 @@ void loop(void)
     voltage = ((Vss - voltage) * RsS )/ voltage;
     output += "," + String(voltage,3 ) + "," + String(Vss, 4);// + "," + co230 + "," + co241 + "," +
     //          String(scd41.getTemperature(), 2)+ "," + String(scd41.getHumidity(),2);
-
+    output += "," + String(avg_end - avg_start,0);
     Serial.println(output);
     //delay(1000);
     lastRefresh = current;
@@ -454,9 +456,9 @@ void checkIaqSensorStatus(void){
 }
 
 void errLeds(void){
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(100);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(100);
+  // pinMode(LED_BUILTIN, OUTPUT);
+  // digitalWrite(LED_BUILTIN, HIGH);
+  // delay(100);
+  // digitalWrite(LED_BUILTIN, LOW);
+  // delay(100);
 }
