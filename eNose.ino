@@ -104,7 +104,7 @@ Adafruit_ADS1115 ads4; //ox4a
   // #define MQ2_DAC     mcp1 //define wich dac the MQ135 heater is on
   // #define MQ2_DAC_CH MCP4728_CHANNEL_A //channel on the dac that the heater is on
 
-//info for the MQ-8 sensor
+//info for the MQ-4 sensor
   #define MQ8_ADC     ads2 //define which adc the MQ135 is on
   #define MQ8_RS_PIN  1 //channel on the adc that the sense resistor is on
   #define MQ8_RH_PIN  0 //channel on the adc that the heat sense resistor is on
@@ -112,7 +112,7 @@ Adafruit_ADS1115 ads4; //ox4a
   // #define MQ8_DAC     mcp1 //define wich dac the MQ135 heater is on
   // #define MQ8_DAC_CH  MCP4728_CHANNEL_D //channel on the dac that the heater is on
 
-//info for the MQ-4 sensor
+//info for the MQ-8 sensor
   #define MQ4_ADC     ads2 //define which adc the MQ135 is on
   #define MQ4_RS_PIN  3 //channel on the adc that the sense resistor is on
   #define MQ4_RH_PIN  2 //channel on the adc that the heat sense resistor is on
@@ -120,7 +120,7 @@ Adafruit_ADS1115 ads4; //ox4a
   // #define MQ4_DAC     mcp1 //define wich dac the MQ135 heater is on
   // #define MQ4_DAC_CH  MCP4728_CHANNEL_C //channel on the dac that the heater is on
 
-//info for the MQ-3 sensor
+//info for the 20k ref sensor
   #define MQ3_ADC     ads3 //define which adc the MQ135 is on
   #define MQ3_RS_PIN  1 //channel on the adc that the sense resistor is on
   #define MQ3_RH_PIN  0 //channel on the adc that the heat sense resistor is on
@@ -128,7 +128,7 @@ Adafruit_ADS1115 ads4; //ox4a
   // #define MQ3_DAC     mcp2 //define wich dac the MQ135 heater is on
   // #define MQ3_DAC_CH  MCP4728_CHANNEL_A //channel on the dac that the heater is on
 
-//info for the MQ-7 sensor
+//info for the MQ-6 sensor
   #define MQ7_ADC     ads3 //define which adc the MQ135 is on
   #define MQ7_RS_PIN  3 //channel on the adc that the sense resistor is on
   #define MQ7_RH_PIN  2 //channel on the adc that the heat sense resistor is on
@@ -156,7 +156,7 @@ Adafruit_ADS1115 ads4; //ox4a
 //for heater use
 int heat_i = 0;
 #define RsH   1.5     //sense resistors on the gas sensor heaters. 
-#define RsS   22000   //sense resistors on the gas sensors. 
+#define RsS   20000   //sense resistors on the gas sensors. 
 float Vcc=5.0;       //heater voltage, will be re-calculated each run
 float Vss=2.5;        //starting sense resistor voltage, will be calculated each run
 
@@ -167,7 +167,7 @@ float Vss=2.5;        //starting sense resistor voltage, will be calculated each
 const int REF_INTERVAL = 1000; //want a sample every 1000ms reported back over serial.
 unsigned long lastRefresh = 0;
 unsigned long test_start = 0;
-const unsigned long test_duration = 2000000; //get 200 seconds of data from start of serial monitoring
+const unsigned long test_duration = 10000000; //get 10k seconds of data from start of serial monitoring
 const int num_averages = 10;
 
 // Entry point for the example
@@ -270,10 +270,13 @@ void setup(void)
   #if enose_calib
     while(!Serial)
   #endif
-    output = "time, temp, humidity, RS135, RS2, RS8, RS4, RS3, RS7, Vss, Sample_Time";
+    output = "time, temp, humidity,VoC,Pressure,CO2, MQ135, MQ2, MQ4, MQ8, MQ6, 20k1, Vss, Sample_Time";
 
   //output = "time, temp, humidity, RH135, RS135, RH2, RS2, RH8, RS8, RH4, RS4, RH3, RS3, RH7, RS7, Vss, co2_30, co2_41, co241temp, co241humid";
   Serial.println(output);
+  MQ135_ADC.setGain(GAIN_TWO); //reset gains This could likely move to void setup
+  MQ8_ADC.setGain(GAIN_TWO);
+  MQ3_ADC.setGain(GAIN_TWO);
 
   //i2c unit test. 
   #if i2c_test
@@ -357,34 +360,32 @@ void loop(void)
     // h3 = ((Vcc - h3) * 1.5 )/ h3;
     // h7 = ((Vcc - h7) * 1.5 )/ h7;
 
-    MQ135_ADC.setGain(GAIN_TWO); //reset gains This could likely move to void setup
-    MQ8_ADC.setGain(GAIN_TWO);
-    MQ3_ADC.setGain(GAIN_TWO);
 
+    int i135 = 0, i2 = 0, i8 = 0, i4 = 0, i3 = 0, i7 = 0, iVss=0;
     float s135 = 0, s2 = 0, s8 = 0, s4 = 0, s3 = 0, s7 = 0;
     Vss = 0;
     unsigned long avg_start = millis();
     for (int i = 0; i< num_averages; i++){ //collect the three data points per sensor
-      Vss += VSS_ADC.readADC_SingleEnded(VSS_PIN); //read the supply voltage at the start of each half second interval.
-      s135 += MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN);
-      s2 += MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN);
-      s8 += MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN);
-      s4 += MQ4_ADC.readADC_SingleEnded(MQ4_RS_PIN);
-      s3 += MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN);
-      s7 += MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN);
+      iVss += VSS_ADC.readADC_SingleEnded(VSS_PIN); //read the supply voltage at the start of each half second interval.
+      i135 += MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN);
+      i2 += MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN);
+      i8 += MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN);
+      i4 += MQ4_ADC.readADC_SingleEnded(MQ4_RS_PIN);
+      i3 += MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN);
+      i7 += MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN);
     }
     unsigned long avg_end = millis();
-    s135 = s135/num_averages; //calculate the average
-    s2 = s2/num_averages;
-    s8 = s8/num_averages;
-    s4 = s4/num_averages;
-    s3 = s3/num_averages;
-    s7 = s7/num_averages;
+    s135 = i135/num_averages; //calculate the average
+    s2 = i2/num_averages;
+    s8 = i8/num_averages;
+    s4 = i4/num_averages;
+    s3 = i3/num_averages;
+    s7 = i7/num_averages;
 
-    Vss = Vss /num_averages;
+    Vss = iVss /num_averages;
     Vss = VSS_ADC.computeVolts(Vss); //convert the measurement to volts
     //String(iaqSensor.temperature)
-    output = String((current/1000))+ "," + String(iaqSensor.temperature)+ "," + String(iaqSensor.humidity);
+    output = String((current/1000))+ "," + String(iaqSensor.temperature)+ "," + String(iaqSensor.humidity)+","+ String(iaqSensor.breathVocEquivalent)+ "," + String(iaqSensor.pressure)+"," +String(iaqSensor.co2Equivalent);
     //output +=  "," + String(h135,3); //output the heater resistance and the sense resistance for all sensors
     voltage = MQ135_ADC.computeVolts(s135);
     voltage = ((Vss - voltage) * RsS )/ voltage;
@@ -412,15 +413,17 @@ void loop(void)
 
     //output += "," + String(h7,3);
     voltage = MQ7_ADC.computeVolts(s7);
+    //Serial.println(String(voltage,4)+ "," + s7 + "," + String(Vss,4));
     voltage = ((Vss - voltage) * RsS )/ voltage;
+    
     output += "," + String(voltage,3 ) + "," + String(Vss, 4);// + "," + co230 + "," + co241 + "," +
     //          String(scd41.getTemperature(), 2)+ "," + String(scd41.getHumidity(),2);
-    output += "," + String(avg_end - avg_start,0);
+    output += "," + String((avg_end - avg_start));
     Serial.println(output);
     //delay(1000);
     lastRefresh = current;
   }
-  else if ((current - test_start) > test_duration){
+  else if ((current - test_start) > test_duration){ //if the alotted test time has stopped. 
     Serial.println("Done with test");
     while(1);
   }
