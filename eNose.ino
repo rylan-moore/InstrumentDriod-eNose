@@ -361,28 +361,28 @@ void loop(void)
     // h7 = ((Vcc - h7) * 1.5 )/ h7;
 
 
-    int i135 = 0, i2 = 0, i8 = 0, i4 = 0, i3 = 0, i7 = 0, iVss=0;
+  //  int i135 = 0, i2 = 0, i8 = 0, i4 = 0, i3 = 0, i7 = 0, iVss=0;
     float s135 = 0, s2 = 0, s8 = 0, s4 = 0, s3 = 0, s7 = 0;
     Vss = 0;
     unsigned long avg_start = millis();
     for (int i = 0; i< num_averages; i++){ //collect the three data points per sensor
-      iVss += VSS_ADC.readADC_SingleEnded(VSS_PIN); //read the supply voltage at the start of each half second interval.
-      i135 += MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN);
-      i2 += MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN);
-      i8 += MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN);
-      i4 += MQ4_ADC.readADC_SingleEnded(MQ4_RS_PIN);
-      i3 += MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN);
-      i7 += MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN);
+      Vss += VSS_ADC.readADC_SingleEnded(VSS_PIN); //read the supply voltage at the start of each half second interval.
+      s135 += MQ135_ADC.readADC_SingleEnded(MQ135_RS_PIN);
+      s2 += MQ2_ADC.readADC_SingleEnded(MQ2_RS_PIN);
+      s8 += MQ8_ADC.readADC_SingleEnded(MQ8_RS_PIN);
+      s4 += MQ4_ADC.readADC_SingleEnded(MQ4_RS_PIN);
+      s3 += MQ3_ADC.readADC_SingleEnded(MQ3_RS_PIN);
+      s7 += MQ7_ADC.readADC_SingleEnded(MQ7_RS_PIN);
     }
     unsigned long avg_end = millis();
-    s135 = i135/num_averages; //calculate the average
-    s2 = i2/num_averages;
-    s8 = i8/num_averages;
-    s4 = i4/num_averages;
-    s3 = i3/num_averages;
-    s7 = i7/num_averages;
+    s135 = s135/num_averages; //calculate the average
+    s2 = s2/num_averages;
+    s8 = s8/num_averages;
+    s4 = s4/num_averages;
+    s3 = s3/num_averages;
+    s7 = s7/num_averages;
 
-    Vss = iVss /num_averages;
+    Vss = Vss /num_averages;
     Vss = VSS_ADC.computeVolts(Vss); //convert the measurement to volts
     //String(iaqSensor.temperature)
     output = String((current/1000))+ "," + String(iaqSensor.temperature)+ "," + String(iaqSensor.humidity)+","+ String(iaqSensor.breathVocEquivalent)+ "," + String(iaqSensor.pressure)+"," +String(iaqSensor.co2Equivalent);
