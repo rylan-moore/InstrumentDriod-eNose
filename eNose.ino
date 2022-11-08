@@ -27,14 +27,13 @@
 #include <Adafruit_ADS1X15.h>
 
 //test define 
-//#define i2c_test    true
-#define enose_calib    true
+#define enose_calib    true //This test will enable the serial output, basically all the code does now. 
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
 void errLeds(void);
 
-// Create an object of the class Bsec
+// Create an object of the class Bsec -- BME 688
 Bsec iaqSensor;
 
 String output; //used for serial output
@@ -43,10 +42,8 @@ Adafruit_ADS1115 ads1; //0x48
 Adafruit_ADS1115 ads2; //0x49
 Adafruit_ADS1115 ads3; //0x4b
 Adafruit_ADS1115 ads4; //ox4a
-// Adafruit_MCP4728 mcp1; //0x60
-// Adafruit_MCP4728 mcp2; //0x61 (this was set already)
 
-/*Sensor Table
+/*Sensor Table ## This can be updated without needing to change any vars. 
 s1 MQ135
 s2 MQ2
 s3 MQ4 
@@ -56,33 +53,33 @@ s6 MQ6
 */
 
 
-//info for the MQ135 sensor
-  #define S1_ADC    ads1 //define which adc the MQ135 is on
+//info for the Sensor 1
+  #define S1_ADC    ads1 //define which adc Sensor 1 is on
   #define S1_RS_PIN  1 //channel on the adc that the sense resistor is on
   #define S1_RH_PIN  0 //channel on the adc that the heat sense resistor is on
 
-//info for the MQ-2 sensor
-  #define S2_ADC     ads1 //define which adc the MQ135 is on
+//info for the Sensor 2
+  #define S2_ADC     ads1 //define which adc Sensor 2 is on
   #define S2_RS_PIN  3 //channel on the adc that the sense resistor is on
   #define S2_RH_PIN  2 //channel on the adc that the heat sense resistor is on
 
-//info for the MQ-4 sensor
-  #define S3_ADC     ads2 //define which adc the MQ135 is on
+//info for the sensor 3
+  #define S3_ADC     ads2 //define which adc the Sensor 3 is on
   #define S3_RS_PIN  1 //channel on the adc that the sense resistor is on
   #define S3_RH_PIN  0 //channel on the adc that the heat sense resistor is on
 
-//info for the MQ-8 sensor
-  #define S4_ADC     ads2 //define which adc the MQ135 is on
+//info for the Sensor 4
+  #define S4_ADC     ads2 //define which adc the Sensor 4 is on 
   #define S4_RS_PIN  3 //channel on the adc that the sense resistor is on
   #define S4_RH_PIN  2 //channel on the adc that the heat sense resistor is on
 
-//info for the 20k ref sensor
-  #define S5_ADC     ads3 //define which adc the MQ135 is on
+//info for the Sensor 5
+  #define S5_ADC     ads3 //define which adc the Sensor 5 is on
   #define S5_RS_PIN  1 //channel on the adc that the sense resistor is on
   #define S5_RH_PIN  0 //channel on the adc that the heat sense resistor is on
 
-//info for the MQ-6 sensor
-  #define S6_ADC     ads3 //define which adc the MQ135 is on
+//info for the Sensor 6
+  #define S6_ADC     ads3 //define which adc the Sensor 6 is on
   #define S6_RS_PIN  3 //channel on the adc that the sense resistor is on
   #define S6_RH_PIN  2 //channel on the adc that the heat sense resistor is on
 
@@ -91,16 +88,14 @@ s6 MQ6
   #define VSS_PIN       0
 
 //i2c devices defines
-// #define DAC1_ADDR       0x60
-// #define DAC2_ADDR       0x61
 #define ADC1_ADDR       0x48
 #define ADC2_ADDR       0x49
 #define ADC3_ADDR       0x4b
 #define ADC4_ADDR       0x4a
 
 //for heater use
-int heat_i = 0;
-#define RsH   1.5     //sense resistors on the gas sensor heaters. 
+int heat_i = 0; //NOT USED
+#define RsH   1.5     //sense resistors on the gas sensor heaters. NO LONGER USED 
 #define RsS   20000   //sense resistors on the gas sensors. 
 float Vcc=5.0;       //heater voltage, will be re-calculated each run
 float Vss=2.5;        //starting sense resistor voltage, will be calculated each run
@@ -116,9 +111,6 @@ const int num_averages = 10;
 void setup(void)
 {
   Serial.begin(115200);
-  #if i2c_test
-    while(!Serial) //wait for the serial connection 
-  #endif
 
   Wire.begin();
 
@@ -185,14 +177,6 @@ void setup(void)
   S1_ADC.setGain(GAIN_TWO);
   S3_ADC.setGain(GAIN_TWO);
   S5_ADC.setGain(GAIN_TWO);
-
-  //i2c unit test. 
-  #if i2c_test
-    Serial.println("Finsihed i2c device test check!");
-    while(1){
-      delay(10);
-    }
-  #endif
 
   /*Start the test timer, which will then run for 10k seconds*/
   test_start = millis();
