@@ -1,11 +1,9 @@
-
-
 /**
  * @file eNose.ino
  * @author Rylan Moore (rylan.moore@colorado.edu)
  * @brief Enose project
- * @version 1.0
- * @date 2022-09-19
+ * @version 1.1
+ * @date 2022-11-7
  * 
  * @copyright Copyright (c) 2022
  * 
@@ -13,31 +11,20 @@
  *        MQ-135/2/3/4/8/7
  *        BME688 - 0x76/0x77
  *        ADS1115 - 0x48, 0x49, 0x4A, 0x4B
- *        MCP4728 - 0x60, 0x63 No longer used
- *        SCD30 - 0x61 No longer used
- *        SCD41 - 0x62 No longer used
  *        
- *        Gravity Infared V1.1 No longer used
  *      MCU:
- *        QT PY SAMD21
+ *        QT PY SAMD21-E18A
  * 
  * Current version collects data from all sensors and reports it over serial to a host. 
- * This needs to be adjusted in the future to be calibrated and then run program to detect gasses. 
  * 
- * New use case is going to be something with beer or the darkness of beer. 
+ * 
+ * 
  */
 
 
 
 #include "bsec.h"
 #include <Adafruit_ADS1X15.h>
-// #include <Adafruit_MCP4728.h>
-//add new co2 sensors
-// #include "SparkFun_SCD30_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD30
-// SCD30 scd30;
-// #include "SparkFun_SCD4x_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD4x
-// SCD4x scd41;
-//#include "MQ135.h"
 
 //test define 
 //#define i2c_test    true
@@ -46,15 +33,6 @@
 // Helper functions declarations
 void checkIaqSensorStatus(void);
 void errLeds(void);
-
-// float getCorrectionFactor(float t, float h);
-// float getCorrectedResistance(float t, float h);
-// float getResistance(int sensor);
-// float getCorrectedPPM(float t, float h);
-// float getCorrectedRZero(float t, float h);
-// float getPPM();
-
-// float getPPMgravity(void);
 
 // Create an object of the class Bsec
 Bsec iaqSensor;
@@ -67,24 +45,6 @@ Adafruit_ADS1115 ads3; //0x4b
 Adafruit_ADS1115 ads4; //ox4a
 // Adafruit_MCP4728 mcp1; //0x60
 // Adafruit_MCP4728 mcp2; //0x61 (this was set already)
-
-// //for MQ-135
-// #define PARA 116.6020682
-// #define PARB -2.769034857
-
-// /// Parameters to model temperature and humidity dependence
-// #define CORA .00035
-// #define CORB .02718
-// #define CORC 1.39538
-// #define CORD .0018
-// #define CORE -.003333333
-// #define CORF -.001923077
-// #define CORG 1.130128205
-
-/// Atmospheric CO2 level for calibration purposes
-// #define ATMOCO2 420 //Global CO2 Aug 2021
-// #define _rload  20.1
-// #define _rzero  8.1//10.91
 
 //begin sensor defines 
 
@@ -160,9 +120,6 @@ int heat_i = 0;
 float Vcc=5.0;       //heater voltage, will be re-calculated each run
 float Vss=2.5;        //starting sense resistor voltage, will be calculated each run
 
-// float co230 = 0; //keep old data
-// float co241 = 0;
-
 
 const int REF_INTERVAL = 1000; //want a sample every 1000ms reported back over serial.
 unsigned long lastRefresh = 0;
@@ -226,22 +183,9 @@ void setup(void)
       delay(10);
     }
   }
-  // if (scd30.begin() == false){
-  //   Serial.println("Failed to find SCD30");
-  //   while (1)
-  //     ;
-  // }
-
-  // if (scd41.begin() == false){
-  //   Serial.println("Failed to find SCD41");
-  //   while (1)
-  //     ;
-  // }
   /*end checking i2c devices*/
 
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
-  // output = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
-  // Serial.println(output);
   checkIaqSensorStatus();
   //pinMode(A0, INPUT);
 
@@ -285,15 +229,9 @@ void setup(void)
       delay(10);
     }
   #endif
-  // mcp1.setChannelValue(MQ135_DAC_CH, (2800)); //turn the heaters on to start. 
-  // mcp1.setChannelValue(MQ2_DAC_CH, (2800)); 
-  // mcp1.setChannelValue(MQ8_DAC_CH, (2800)); 
-  // mcp1.setChannelValue(MQ4_DAC_CH, (2800)); 
-  // mcp2.setChannelValue(MQ3_DAC_CH, (2800)); 
-  // mcp2.setChannelValue(MQ7_DAC_CH, (2800)); 
+
   test_start = millis();
   //calibrate the MQ sensor. 
-  //_rzero = getCorrectedRZero(iaqSensor.temperature, iaqSensor.humidity);
 }
 
 // Function that is looped forever
@@ -333,35 +271,7 @@ void loop(void)
     iaqSensor.run();
     String output;
     float voltage;
-    
-    // if (scd30.dataAvailable()){
-    //   co230 = scd30.getCO2();
-    // }
-    // if (scd41.readMeasurement()){
-    //   co241 = scd41.getCO2();
-    // }
 
-    //GET ALL OF THE HEATER VOLTAGES
-    // float h135, h2, h8, h4, h3, h7;
-    // MQ135_ADC.setGain(GAIN_FOUR);
-    // h135 = MQ135_ADC.computeVolts(MQ135_ADC.readADC_SingleEnded(MQ135_RH_PIN));
-    // h2 = MQ2_ADC.computeVolts(MQ2_ADC.readADC_SingleEnded(MQ2_RH_PIN));
-    // MQ8_ADC.setGain(GAIN_FOUR);
-    // h8 = MQ8_ADC.computeVolts(MQ8_ADC.readADC_SingleEnded(MQ8_RH_PIN));
-    // h4 = MQ4_ADC.computeVolts(MQ4_ADC.readADC_SingleEnded(MQ4_RH_PIN));
-    // MQ3_ADC.setGain(GAIN_FOUR);
-    // h3 = MQ3_ADC.computeVolts(MQ3_ADC.readADC_SingleEnded(MQ3_RH_PIN));
-    // h7 = MQ7_ADC.computeVolts(MQ7_ADC.readADC_SingleEnded(MQ7_RH_PIN));
-
-    // h135 = ((Vcc - h135) * 1.5 )/ h135; //compute resistances 
-    // h2 = ((Vcc - h2) * 1.5 )/ h2;
-    // h8 = ((Vcc - h8) * 1.5 )/ h8;
-    // h4 = ((Vcc - h4) * 1.5 )/ h4;
-    // h3 = ((Vcc - h3) * 1.5 )/ h3;
-    // h7 = ((Vcc - h7) * 1.5 )/ h7;
-
-
-  //  int i135 = 0, i2 = 0, i8 = 0, i4 = 0, i3 = 0, i7 = 0, iVss=0;
     float s135 = 0, s2 = 0, s8 = 0, s4 = 0, s3 = 0, s7 = 0;
     Vss = 0;
     unsigned long avg_start = millis();
@@ -416,8 +326,7 @@ void loop(void)
     //Serial.println(String(voltage,4)+ "," + s7 + "," + String(Vss,4));
     voltage = ((Vss - voltage) * RsS )/ voltage;
     
-    output += "," + String(voltage,3 ) + "," + String(Vss, 4);// + "," + co230 + "," + co241 + "," +
-    //          String(scd41.getTemperature(), 2)+ "," + String(scd41.getHumidity(),2);
+    output += "," + String(voltage,3 ) + "," + String(Vss, 4);
     output += "," + String((avg_end - avg_start));
     Serial.println(output);
     //delay(1000);
