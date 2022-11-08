@@ -7,8 +7,9 @@
  * 
  * @copyright Copyright (c) 2022
  * 
- * @note Sensors:
- *        MQ-135/2/3/4/8/7
+ * @note  Sensors:
+ *        MQ-135/2/4/8/6
+ *        REF - 20k Vishay Resistor
  *        BME688 - 0x76/0x77
  *        ADS1115 - 0x48, 0x49, 0x4A, 0x4B
  *        
@@ -16,9 +17,6 @@
  *        QT PY SAMD21-E18A
  * 
  * Current version collects data from all sensors and reports it over serial to a host. 
- * 
- * 
- * 
  */
 
 
@@ -43,7 +41,7 @@ Adafruit_ADS1115 ads2; //0x49
 Adafruit_ADS1115 ads3; //0x4b
 Adafruit_ADS1115 ads4; //ox4a
 
-/*Sensor Table ## This can be updated without needing to change any vars. 
+/*Sensor Table ## This can be updated without needing to change any vars. The only thing to change is the Serial Print HEADER
 s1 MQ135
 s2 MQ2
 s3 MQ4 
@@ -186,6 +184,8 @@ void setup(void)
 void loop(void)
 {
   unsigned long current = millis(); //This will store the current time at the start of the loop
+  
+  /*Enter the if statement when it has been one second between sample runs, and less time than total test time*/
   if ( (current - lastRefresh >= REF_INTERVAL) && ((current - test_start) < test_duration)){
 
     iaqSensor.run(); //Tell the BME688 to collect data
